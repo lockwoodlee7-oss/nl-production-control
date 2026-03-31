@@ -229,9 +229,10 @@ main{padding:140px 24px 60px}
   <button class="sn-btn primary" onclick="openNewShift()">+ New Shift</button>
 </div>
 <div class="search-bar">
-  <input type="text" id="searchInput" placeholder="Search units, keywords, dates across all shifts...">
+  <input type="text" id="searchInput" placeholder="Search units, keywords across all shifts...">
   <span class="search-count" id="searchCount"></span>
 </div>
+<div id="searchResults" style="display:none;position:fixed;top:131px;left:20px;right:20px;z-index:75;background:var(--card);border:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:50vh;overflow-y:auto"></div>
 <main id="mc"></main>
 
 <!-- BAY MODAL -->
@@ -651,6 +652,13 @@ function saveBay(){
   document.getElementById('valMsg').classList.remove('show');
 
   const u=document.getElementById('fUnit').value.trim();
+  // Check bay span fits
+  const cars=getCarCount(u);
+  const{type,id,bay}=aRef;
+  if(type==='road'&&bay+cars-1>4){
+    alert(`This is a ${cars}-car unit and needs ${cars} bays. There are only ${4-bay+1} bays available from Bay ${bay}. Place it in Bay ${4-cars+1} or earlier.`);
+    return;
+  }
   const trades={
     elec:{req:document.getElementById('trElec').value,done:document.getElementById('trElecDone').checked},
     mech:{req:document.getElementById('trMech').value,done:document.getElementById('trMechDone').checked},
@@ -677,7 +685,7 @@ async function saveLink(){const name=document.getElementById('lName').value.trim
 async function delLink(i){const links=await getLinks();if(!confirm('Remove "'+links[i]?.name+'"?'))return;links.splice(i,1);await saveLinks(links);await render()}
 
 // SHIFT NAV
-async function prevShift(){const keys=await allKeys();const idx=keys.indexOf(actKey);if(idx<keys.length-1){actKey=keys[idx+1];D=await loadD(actKey);await render()}}
+async function prevShift(){const keys=await allKeys();if(!keys.length)return;const idx=keys.indexOf(actKey);if(idx===-1){actKey=keys[0];D=await loadD(actKey);await render()}else if(idx<keys.length-1){actKey=keys[idx+1];D=await loadD(actKey);await render()}}
 async function goCurrentShift(){actKey=curKey;D=await loadD(actKey);await render()}
 function openNewShift(){nsMode='copy';document.getElementById('nsCopy').classList.add('selected');document.getElementById('nsBlank').classList.remove('selected');document.getElementById('nsModal').classList.add('open')}
 function closeNS(){document.getElementById('nsModal').classList.remove('open')}
@@ -695,25 +703,72 @@ async function toggleHist(hdr,idx,key){const body=document.getElementById('hb_'+
     tpl.forEach(sec=>{const val=hd.handover?.[sec.label];if(val)h+=`<div style="margin-top:8px"><div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">${esc(sec.label)}</div><div style="font-size:13px;color:var(--text2);padding:4px 0;white-space:pre-wrap">${esc(val)}</div></div>`});
     body.innerHTML=h;body.dataset.loaded='1'}}
 
-// SEARCH
-document.addEventListener('DOMContentLoaded',()=>{document.getElementById('searchInput').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('.search-hit').forEach(x=>x.classList.remove('search-hit'));if(q.length<2){document.getElementById('searchCount').textContent='';return}let hits=0;document.querySelectorAll('.bay,.wtbl tbody tr').forEach(el=>{if(el.textContent.toLowerCase().includes(q)){el.classList.add('search-hit');hits++}});document.getElementById('searchCount').textContent=hits?hits+' matches':'No matches';const first=document.querySelector('.search-hit');if(first)first.scrollIntoView({behavior:'smooth',block:'center'})})});
-
-// ARCHIVE
-function openArchive(){document.getElementById('archModal').classList.add('open');document.getElementById('archQ').value='';document.getElementById('archR').innerHTML='<p style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Search for a unit number or keyword</p>';setTimeout(()=>document.getElementById('archQ').focus(),100)}
-function closeArch(){document.getElementById('archModal').classList.remove('open')}
-async function archSearch(){const q=document.getElementById('archQ').value.trim(),out=document.getElementById('archR');
-  if(q.length<2){out.innerHTML='<p style="padding:20px;text-align:center;color:var(--muted)">Type at least 2 characters</p>';return}
-  try{const results=await apiGet('/api/search?q='+encodeURIComponent(q));
-    if(!results||!results.length){out.innerHTML='<p style="padding:20px;text-align:center;color:var(--muted)">No results</p>';return}
-    let html='';results.forEach(r=>{html+=`<div class="arch-result" onclick="jumpToBay('${esc(r.key)}','${r.type}','${r.id||''}',${r.bay||0})"><div class="ar-shift">${esc(kLabel(r.key))}</div>`;if(r.unit)html+=`<div class="ar-unit">${esc(r.unit)} <span style="font-size:11px;color:var(--muted)">${r.type==='road'?'Road ':''}${r.id} Bay ${r.bay}</span></div>`;html+=`<div class="ar-detail">${esc(r.detail||'')}</div></div>`});
-    out.innerHTML=html;
-  }catch(e){out.innerHTML='<p style="padding:20px;text-align:center;color:var(--red)">Search error</p>'}}
-
-async function jumpToBay(k,type,id,bay){closeArch();actKey=k;D=await loadD(k);await render();
+// SEARCH — searches current page AND all previous shifts via API
+let searchTimer=null;
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('searchInput').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.search-hit').forEach(x=>x.classList.remove('search-hit'));
+  if(q.length<2){document.getElementById('searchCount').textContent='';document.getElementById('searchResults').style.display='none';return}
+  // Local matches on current page
+  let localHits=0;
+  document.querySelectorAll('.bay,.wtbl tbody tr').forEach(el=>{if(el.textContent.toLowerCase().includes(q)){el.classList.add('search-hit');localHits++}});
+  document.getElementById('searchCount').textContent=localHits?localHits+' on this shift':'';
+  const first=document.querySelector('.search-hit');
+  if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
+  // Also search all shifts via API (debounced)
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(async()=>{
+    try{
+      const results=await apiGet('/api/search?q='+encodeURIComponent(q));
+      const box=document.getElementById('searchResults');
+      if(!results||!results.length){box.style.display='none';return}
+      let html='<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border)">RESULTS FROM ALL SHIFTS</div>';
+      results.forEach(r=>{
+        html+=`<div class="arch-result" onclick="jumpToShift('${esc(r.key)}','${r.type}','${r.id||''}',${r.bay||0})">`;
+        html+=`<div class="ar-shift">${esc(kLabel(r.key))}</div>`;
+        if(r.unit)html+=`<div class="ar-unit">${esc(r.unit)} <span style="font-size:11px;color:var(--muted)">${r.type==='road'?'Road ':''}${r.id} Bay ${r.bay}</span></div>`;
+        html+=`<div class="ar-detail">${esc(r.detail||'')}</div></div>`;
+      });
+      box.innerHTML=html;box.style.display='block';
+    }catch(e){}
+  },400);
+})});
+async function jumpToShift(k,type,id,bay){
+  document.getElementById('searchResults').style.display='none';
+  document.getElementById('searchInput').value='';
+  actKey=k;D=await loadD(k);await render();
   setTimeout(()=>{document.querySelectorAll('.search-focus').forEach(x=>x.classList.remove('search-focus'));let target=null;
     if(type==='notes')target=document.querySelector('.ho-sec');
     else if(type&&id&&bay)target=document.querySelector(`.bay[data-type="${type}"][data-id="${id}"][data-bay="${bay}"]`);
-    if(target){target.classList.add('search-focus');target.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>target.classList.remove('search-focus'),5000)}else window.scrollTo(0,0)},100)}
+    if(target){target.classList.add('search-focus');target.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>target.classList.remove('search-focus'),5000)}else window.scrollTo(0,0)},100);
+}
+// Close search results when clicking outside
+document.addEventListener('click',e=>{if(!e.target.closest('.search-bar')&&!e.target.closest('#searchResults'))document.getElementById('searchResults').style.display='none'});
+
+// ARCHIVE — list of all past handovers
+async function openArchive(){
+  document.getElementById('archModal').classList.add('open');
+  const out=document.getElementById('archR');
+  out.innerHTML='<p style="padding:20px;text-align:center;color:var(--muted)">Loading...</p>';
+  const keys=await allKeys();
+  if(!keys.length){out.innerHTML='<p style="padding:20px;text-align:center;color:var(--muted)">No archived shifts</p>';return}
+  let html='';
+  for(const k of keys){
+    const t=kType(k);
+    html+=`<div class="arch-result" onclick="jumpToShift('${esc(k)}','','',0)">`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between">`;
+    html+=`<div class="ar-unit" style="font-size:14px">${esc(kLabel(k))}</div>`;
+    html+=`<span class="type ${t}" style="font-size:9px;padding:2px 8px;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-weight:700">${t.toUpperCase()}</span>`;
+    html+=`</div>`;
+    if(k===actKey)html+=`<div style="font-size:10px;color:var(--orange);font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;margin-top:2px">CURRENTLY VIEWING</div>`;
+    html+=`</div>`;
+  }
+  out.innerHTML=html;
+}
+function closeArch(){document.getElementById('archModal').classList.remove('open')}
+
+// Auto-save reminder every 6 hours
+setInterval(()=>{if(actKey===curKey)saveD()},6*60*60*1000);
 
 // DARK MODE
 function toggleDark(){document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');localStorage.setItem(LS_DARK,isDark?'1':'0');document.getElementById('btnDark').innerHTML=isDark?'&#9728; Light':'&#9790; Dark'}

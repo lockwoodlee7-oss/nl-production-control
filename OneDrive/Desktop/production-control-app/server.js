@@ -111,8 +111,29 @@ app.get('/api/search', async (req, res) => {
             if (!bay) continue;
             const text = JSON.stringify(bay).toLowerCase();
             if (text.includes(q)) {
-              hits.push({ key: row.key, type: 'road', id: roadNum, bay: parseInt(bayNum), unit: bay.unit, detail: bay.job || bay.notes || '' });
+              hits.push({ key: row.key, type: 'road', id: roadNum, bay: parseInt(bayNum), unit: bay.unit, detail: [bay.worktype, bay.status, bay.team, bay.comments].filter(Boolean).join(' · ') });
             }
+          }
+        }
+      }
+      // Search sub sheds
+      if (d.subSheds) {
+        for (const [shedName, bays] of Object.entries(d.subSheds)) {
+          for (const [bayNum, bay] of Object.entries(bays)) {
+            if (!bay) continue;
+            const text = JSON.stringify(bay).toLowerCase();
+            if (text.includes(q)) {
+              hits.push({ key: row.key, type: 'sub', id: shedName, bay: parseInt(bayNum), unit: bay.unit, detail: [bay.worktype, bay.status, bay.team, bay.comments].filter(Boolean).join(' · ') });
+            }
+          }
+        }
+      }
+      // Search awaiting list
+      if (d.awaiting) {
+        for (const aw of d.awaiting) {
+          const text = JSON.stringify(aw).toLowerCase();
+          if (text.includes(q)) {
+            hits.push({ key: row.key, type: 'awaiting', id: null, bay: null, unit: aw.unit, detail: [aw.reason, aw.currentLoc, aw.update].filter(Boolean).join(' · ') });
           }
         }
       }
@@ -120,13 +141,13 @@ app.get('/api/search', async (req, res) => {
       if (d.handover) {
         for (const [label, val] of Object.entries(d.handover)) {
           if (val && val.toLowerCase().includes(q)) {
-            hits.push({ key: row.key, type: 'notes', id: null, bay: null, unit: null, detail: val.slice(0, 80) });
+            hits.push({ key: row.key, type: 'notes', id: null, bay: null, unit: null, detail: label + ': ' + val.slice(0, 80) });
             break;
           }
         }
       }
     }
-    res.json(hits.slice(0, 30));
+    res.json(hits.slice(0, 50));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
