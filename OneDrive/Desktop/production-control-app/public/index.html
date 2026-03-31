@@ -306,7 +306,7 @@ let curKey='',actKey='',D={},aRef=null,saveTmr=null,nsMode='copy',dragSrc=null;
 let cachedLinks=null,cachedTpl=null,FLEET={};
 
 // Load fleet data
-fetch('/fleet.json').then(r=>r.json()).then(d=>{FLEET=d}).catch(()=>{});
+let fleetReady=fetch('/fleet.json').then(r=>r.json()).then(d=>{FLEET=d}).catch(()=>{});
 
 // ═══ SOCKET.IO ═══
 const socket=io();
@@ -408,7 +408,11 @@ async function render(){
     h+=`</div></div><div class="road-bays">`;
     const consumed=new Set();
     for(let b=1;b<=4;b++){
-      if(consumed.has(b)){continue;}
+      if(consumed.has(b)){
+        // Bay consumed by a spanning unit — show as occupied, no click
+        h+=`<div class="bay" style="opacity:.25;pointer-events:none;border-style:dotted;min-height:90px;display:flex;align-items:center;justify-content:center" data-type="road" data-id="${rc.num}" data-bay="${b}"><span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">\u25c0 OCCUPIED</span></div>`;
+        continue;
+      }
       const bd=D.roads?.[rc.num]?.[b];
       const span=bd?.unit?getCarCount(bd.unit):1;
       for(let s=1;s<span&&(b+s)<=4;s++)consumed.add(b+s);
@@ -778,7 +782,7 @@ function initDark(){const pref=localStorage.getItem(LS_DARK);const h=new Date().
 function startClock(){function tick(){const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const p=document.getElementById('shiftPill');if(h>=6&&h<18){p.textContent='DAY';p.className='shift-pill day'}else{p.textContent='NIGHT';p.className='shift-pill night'}}tick();setInterval(tick,1000)}
 
 // INIT
-window.addEventListener('DOMContentLoaded',async()=>{curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock()});
+window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock()});
 </script>
 </body>
 </html>
