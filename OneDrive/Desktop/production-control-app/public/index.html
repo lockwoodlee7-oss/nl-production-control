@@ -239,7 +239,8 @@ main{padding:140px 24px 60px}
 <div class="mbody">
   <div id="fleetBanner"></div>
   <div class="val-msg" id="valMsg">All fields marked must be completed before saving</div>
-  <div class="fr3"><div class="fg"><label>Unit Number *</label><input type="text" class="fi mono" id="fUnit" autocomplete="off" oninput="onUnitInput()"></div><div class="fg"><label>Vehicle / Class</label><input type="text" class="fi" id="fVeh" readonly style="opacity:.7"></div><div class="fg"><label>Exam Number *</label><input type="text" class="fi" id="fExam" autocomplete="off"></div></div>
+  <div class="fr3"><div class="fg"><label>Unit Number *</label><input type="text" class="fi mono" id="fUnit" autocomplete="off" oninput="onUnitInput()"></div><div class="fg"><label>Vehicle / Class</label><input type="text" class="fi" id="fVeh" readonly style="opacity:.7"></div><div class="fg"><label>Leading Vehicle</label><select class="fi mono" id="fLead"></select></div></div>
+  <div class="fr3"><div class="fg"><label>Exam Number *</label><input type="text" class="fi" id="fExam" autocomplete="off"></div><div class="fg" style="grid-column:span 2"></div></div>
   <div class="fr3"><div class="fg"><label>Work Type *</label><select class="fi" id="fWt"><option value="">—</option><option>Exam</option><option>Defect</option><option>Modification</option><option>FP</option><option>UFC</option><option>GWL</option><option>Other</option></select></div><div class="fg"><label>Team *</label><select class="fi" id="fTeam"><option value="">—</option><option>A Team</option><option>B Team</option><option>C Team</option><option>D Team</option><option>MFT</option><option>LHP</option><option>TRI</option><option>CAF</option></select></div><div class="fg"><label>Staff *</label><input type="number" class="fi mono" id="fStaff" min="0" max="20"></div></div>
   <div class="fr3"><div class="fg"><label>Priority *</label><select class="fi" id="fPri"><option value="">—</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></div><div class="fg"><label>Status *</label><select class="fi" id="fStat"><option value="">—</option><option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option><option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>COMPLETE</option><option>STOPPED</option><option>WAITING</option></select></div><div class="fg"><label>Reason</label><select class="fi" id="fReason"><option value="">—</option><option>Material</option><option>Tech support</option><option>Staff Resource</option><option>Quality</option><option>Authority</option><option>Access</option><option>Other</option></select></div></div>
   <div class="fr3"><div class="fg"><label>Arrival Time *</label><input type="datetime-local" class="fi" id="fArr"></div><div class="fg"><label>Sched Release *</label><input type="datetime-local" class="fi" id="fSR"></div><div class="fg"><label>Est Release</label><input type="datetime-local" class="fi" id="fER"></div></div>
@@ -453,7 +454,8 @@ function renderBay(type,id,bay,d,ed,spec,span){
   if(spec)h+=`<span class="spec">${esc(spec)}</span>`;
   if(d?.unit){
     h+=`<span class="unit">${esc(d.unit)}</span>`;
-    if(fleet)h+=`<span class="class-info">Class ${fleet.c} \u00b7 ${fleet.n}-car \u00b7 Lead: ${fleet.v[0]||''}</span>`;
+    const lv=d.leadVeh||(fleet?fleet.v[0]:'');
+    if(fleet)h+=`<span class="class-info">Class ${fleet.c} \u00b7 ${fleet.n}-car \u00b7 Lead: ${lv}</span>`;
     else if(d.vehicle)h+=`<span class="class-info">${esc(d.vehicle)}</span>`;
     h+=`<span class="info">${[d.worktype,d.exam,d.status].filter(Boolean).join(' \u00b7 ')}</span>`;
     // Trade summary
@@ -495,7 +497,7 @@ function renderQueue(items,tab,ed){
   filtered.forEach((it,idx)=>{const rag=getRag(it),days=getDays(it),dc=rag==='r'?'days-over':rag==='a'?'days-warn':'days-ok';
     const fleet=getFleet(it.unit);
     const click=ed?`onclick="openBM('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})"`:'';
-    h+=`<tr ${click}><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">${fleet?fleet.v[0]:''}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
+    h+=`<tr ${click}><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">${it.leadVeh||(fleet?fleet.v[0]:'')}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
     let flags='';if(it.thirdParty)flags+=`<span class="flag flag-3rd" style="font-size:9px">3RD PARTY</span> `;if(it.isolated)flags+=`<span class="flag flag-iso" style="font-size:9px">ISOLATED</span>`;h+=`<td>${flags}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(it.comments)}">${esc(it.comments)}</td>`;
     if(ed&&it.status!=='COMPLETE')h+=`<td><button class="rfs-btn" onclick="event.stopPropagation();markRFS('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})">&#10004; Ready</button></td>`;else if(ed)h+=`<td></td>`;h+=`</tr>`});
   return h+`</tbody></table>`;
@@ -518,14 +520,19 @@ function onUnitInput(){
   const banner=document.getElementById('fleetBanner');
   const veh=document.getElementById('fVeh');
   const f=getFleet(u);
+  const lead=document.getElementById('fLead');
+  const curLead=lead.value;
   if(f){
     veh.value='Class '+f.c;
+    lead.innerHTML=f.v.map(v=>`<option value="${v}">${v}</option>`).join('');
+    if(curLead&&f.v.includes(curLead))lead.value=curLead;
     banner.innerHTML=`<div class="fleet-banner"><span class="fb-class">Class ${f.c}</span><span class="fb-cars">${f.n}-car unit</span><span class="fb-vehs">Vehicles: ${f.v.join(', ')}</span></div>`;
   } else if(u.length>=6){
     veh.value='';
+    lead.innerHTML='<option value="">N/A</option>';
     banner.innerHTML=`<div class="fleet-banner fb-unknown"><span class="fb-class">Unknown unit</span><span class="fb-cars">Not in fleet database</span></div>`;
   } else {
-    veh.value='';banner.innerHTML='';
+    veh.value='';lead.innerHTML='<option value="">—</option>';banner.innerHTML='';
   }
 }
 
@@ -533,6 +540,9 @@ function onUnitInput(){
 function openBM(type,id,bay){aRef={type,id,bay};const d=type==='road'?D.roads?.[id]?.[bay]:D.subSheds?.[id]?.[bay];document.getElementById('bmT').textContent=d?'Edit Bay':'Place Unit';document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
   const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fWt:'worktype',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
   document.getElementById('f3rd').checked=!!d?.thirdParty;document.getElementById('fIso').checked=!!d?.isolated;
+  // Leading vehicle — populate dropdown then set saved value
+  onUnitInput();
+  if(d?.leadVeh)document.getElementById('fLead').value=d.leadVeh;
   // Trades
   const trades=d?.trades||{};
   document.getElementById('trElec').value=(trades.elec||{}).req||'0';
@@ -576,7 +586,7 @@ function saveBay(){
     asst:{req:document.getElementById('trAsst').value,done:document.getElementById('trAsstDone').checked},
     tp:{req:document.getElementById('trTP').value,done:document.getElementById('trTPDone').checked}
   };
-  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades};
+  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades};
   const{type,id,bay}=aRef;const store=type==='road'?D.roads:D.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;autoS();render();closeBM();
 }
 function clearBay(){if(!aRef||!confirm('Clear this bay?'))return;(aRef.type==='road'?D.roads:D.subSheds)[aRef.id][aRef.bay]=null;autoS();render();closeBM()}
