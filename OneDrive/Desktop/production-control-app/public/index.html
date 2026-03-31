@@ -246,7 +246,7 @@ let cachedLinks=null,cachedTpl=null;
 const socket=io();
 socket.on('connect',()=>{const el=document.getElementById('connStatus');el.textContent='● Live';el.style.color='rgba(52,211,153,.8)'});
 socket.on('disconnect',()=>{const el=document.getElementById('connStatus');el.textContent='● Offline';el.style.color='rgba(248,113,113,.8)'});
-socket.on('shift-updated',async(msg)=>{if(msg.key===actKey){D=msg.data;await render()}});
+socket.on('shift-updated',async(msg)=>{if(msg.key===actKey){const d=await loadD(actKey);if(d){D=d;await render()}}});
 socket.on('config-updated',async()=>{cachedLinks=null;cachedTpl=null;await render()});
 
 // ═══ API LAYER ═══
