@@ -270,6 +270,18 @@ main{padding:140px 24px 60px}
 <div class="mbody" style="padding:0"><div style="padding:12px 20px;border-bottom:1px solid var(--border)"><input type="text" class="fi mono" id="archQ" placeholder="Search unit number, keyword, or date..." oninput="archSearch()" autocomplete="off"></div>
 <div id="archR" style="max-height:55vh;overflow-y:auto;padding:0"></div></div></div></div>
 
+<!-- AWAITING ATTENTION MODAL -->
+<div class="modal-bg" id="awModal"><div class="modal" style="width:600px"><div class="mh"><div><h2 id="awTitle">Add Unit — Awaiting Attention</h2></div><button class="mx" onclick="closeAW()">&times;</button></div>
+<div class="mbody">
+  <div class="fr"><div class="fg"><label>Unit Number</label><input type="text" class="fi mono" id="awUnit" autocomplete="off"></div><div class="fg"><label>Owning Department</label><select class="fi" id="awOwner"><option value="">—</option><option>A Team</option><option>B Team</option><option>C Team</option><option>D Team</option><option>MFT</option><option>LHP</option><option>TRI</option><option>CAF</option><option>Operations</option><option>Planning</option><option>Other</option></select></div></div>
+  <div class="fg"><label>Reason for Visit</label><input type="text" class="fi" id="awReason" placeholder="e.g. Defect repair, Exam, Modification..." autocomplete="off"></div>
+  <div class="fr"><div class="fg"><label>Current Location</label><input type="text" class="fi" id="awCurLoc" placeholder="e.g. Road 3, Yard, Fuel Point..." autocomplete="off"></div><div class="fg"><label>Needs Siting To</label><input type="text" class="fi" id="awSiteTo" placeholder="e.g. Road 1 Bay 2, Any pit road..." autocomplete="off"></div></div>
+  <div class="fr"><div class="fg"><label>Completion %</label><select class="fi mono" id="awPct"><option value="0">0%</option><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option></select></div><div class="fg"><label>Required for Completion</label><input type="text" class="fi" id="awReq" placeholder="e.g. Parts on order, Awaiting authority..." autocomplete="off"></div></div>
+  <div class="fg"><label>Update</label><textarea class="fi" id="awUpdate" rows="2" style="resize:vertical" placeholder="Latest update..."></textarea></div>
+  <div class="fg"><label>Notes</label><textarea class="fi" id="awNotes" rows="2" style="resize:vertical" placeholder="Additional notes..."></textarea></div>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeAW()">Cancel</button><button class="btn btn-s" onclick="saveAW()">Save</button></div></div></div>
+
 <!-- ADD LINK MODAL -->
 <div class="modal-bg" id="linkModal"><div class="modal" style="width:400px"><div class="mh"><h2>Add Link / Reference</h2><button class="mx" onclick="closeLM()">&times;</button></div>
 <div class="mbody"><div class="fg"><label>Display Name</label><input type="text" class="fi" id="lName" placeholder="e.g. QMSP Policy QMS-042" autocomplete="off"></div><div class="fg"><label>Value / Number (optional)</label><input type="text" class="fi" id="lVal" placeholder="e.g. 0113 123 4567" autocomplete="off"></div><div class="fg"><label>URL Link (optional)</label><input type="url" class="fi" id="lUrl" placeholder="https://..." autocomplete="off"></div>
@@ -427,6 +439,36 @@ async function render(){
   }
   h+=`</div></div></div>`;
 
+  // AWAITING ATTENTION
+  if(!D.awaiting)D.awaiting=[];
+  h+=`<div class="panel"><div class="ph"><h2>Units On Site — Awaiting Attention</h2><span class="badge">${D.awaiting.length}</span>`;
+  if(ed)h+=`<button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="openAW(-1)">+ Add Unit</button>`;
+  h+=`</div><div class="pb" style="padding:0;overflow-x:auto">`;
+  if(!D.awaiting.length){
+    h+=`<p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">No units awaiting attention</p>`;
+  } else {
+    h+=`<table class="wtbl"><thead><tr><th>#</th><th>Unit</th><th>Reason for Visit</th><th>Current Location</th><th>Needs Siting</th><th>Owner</th><th>%</th><th>Required for Completion</th><th>Update</th><th>Notes</th>`;
+    if(ed)h+=`<th></th>`;
+    h+=`</tr></thead><tbody>`;
+    D.awaiting.forEach((aw,i)=>{
+      const pctCol=parseInt(aw.pct||0)>=100?'var(--green-t)':parseInt(aw.pct||0)>=50?'var(--amber-t)':'var(--text)';
+      h+=`<tr ${ed?`onclick="openAW(${i})" style="cursor:pointer"`:''}><td style="font-weight:700;color:var(--muted)">${i+1}</td>`;
+      h+=`<td class="uc">${esc(aw.unit)}</td>`;
+      h+=`<td>${esc(aw.reason)}</td>`;
+      h+=`<td>${esc(aw.currentLoc)}</td>`;
+      h+=`<td>${esc(aw.siteTo)}</td>`;
+      h+=`<td>${esc(aw.owner)}</td>`;
+      h+=`<td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${pctCol}">${esc(aw.pct||'0')}%</td>`;
+      h+=`<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(aw.reqComplete)}">${esc(aw.reqComplete)}</td>`;
+      h+=`<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(aw.update)}">${esc(aw.update)}</td>`;
+      h+=`<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(aw.notes)}">${esc(aw.notes)}</td>`;
+      if(ed)h+=`<td><button class="btn btn-d" style="font-size:9px;padding:3px 8px" onclick="event.stopPropagation();delAW(${i})">&#10005;</button></td>`;
+      h+=`</tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+  h+=`</div></div>`;
+
   // LINKS
   h+=`<div class="panel"><div class="ph"><h2>Useful Numbers & Links</h2><button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="openLM()">+ Add</button></div><div class="pb">`;
   if(!links.length)h+=`<p style="color:var(--muted);font-size:13px;text-align:center;padding:10px">No links yet. Click Add to create references.</p>`;
@@ -509,6 +551,36 @@ function markRFS(type,id,bay){const store=type==='road'?D.roads:D.subSheds;if(st
 
 // Service shed
 function onSvc(slot,field,val){if(!D.serviceShed)D.serviceShed={};if(!D.serviceShed[slot])D.serviceShed[slot]={};D.serviceShed[slot][field]=val;autoS()}
+
+// AWAITING ATTENTION
+let awEditIdx=-1;
+function openAW(idx){
+  awEditIdx=idx;
+  const aw=idx>=0&&D.awaiting?D.awaiting[idx]:null;
+  document.getElementById('awTitle').textContent=aw?'Edit Unit — Awaiting Attention':'Add Unit — Awaiting Attention';
+  document.getElementById('awUnit').value=aw?.unit||'';
+  document.getElementById('awOwner').value=aw?.owner||'';
+  document.getElementById('awReason').value=aw?.reason||'';
+  document.getElementById('awCurLoc').value=aw?.currentLoc||'';
+  document.getElementById('awSiteTo').value=aw?.siteTo||'';
+  document.getElementById('awPct').value=aw?.pct||'0';
+  document.getElementById('awReq').value=aw?.reqComplete||'';
+  document.getElementById('awUpdate').value=aw?.update||'';
+  document.getElementById('awNotes').value=aw?.notes||'';
+  document.getElementById('awModal').classList.add('open');
+  setTimeout(()=>document.getElementById('awUnit').focus(),100);
+}
+function closeAW(){document.getElementById('awModal').classList.remove('open');awEditIdx=-1}
+function saveAW(){
+  const unit=document.getElementById('awUnit').value.trim();
+  if(!unit){document.getElementById('awUnit').classList.add('invalid');return}
+  if(!D.awaiting)D.awaiting=[];
+  const entry={unit,reason:document.getElementById('awReason').value.trim(),currentLoc:document.getElementById('awCurLoc').value.trim(),siteTo:document.getElementById('awSiteTo').value.trim(),owner:document.getElementById('awOwner').value,pct:document.getElementById('awPct').value,reqComplete:document.getElementById('awReq').value.trim(),update:document.getElementById('awUpdate').value.trim(),notes:document.getElementById('awNotes').value.trim()};
+  if(awEditIdx>=0)D.awaiting[awEditIdx]=entry;
+  else D.awaiting.push(entry);
+  autoS();render();closeAW();
+}
+function delAW(idx){if(!confirm('Remove this unit from awaiting list?'))return;D.awaiting.splice(idx,1);autoS();render()}
 
 // DRAG & DROP
 function setupDD(){document.querySelectorAll('.bay[draggable="true"]').forEach(el=>{el.addEventListener('dragstart',e=>{dragSrc={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay};el.classList.add('dragging');e.dataTransfer.effectAllowed='move'});el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragSrc=null;document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'))})});
