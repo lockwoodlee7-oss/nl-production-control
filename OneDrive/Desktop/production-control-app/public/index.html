@@ -667,7 +667,7 @@ function saveBay(){
     tp:{req:document.getElementById('trTP').value,done:document.getElementById('trTPDone').checked}
   };
   const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades};
-  const{type,id,bay}=aRef;const store=type==='road'?D.roads:D.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;autoS();render();closeBM();
+  const store=type==='road'?D.roads:D.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;autoS();render();closeBM();
 }
 function clearBay(){if(!aRef||!confirm('Clear this bay?'))return;(aRef.type==='road'?D.roads:D.subSheds)[aRef.id][aRef.bay]=null;autoS();render();closeBM()}
 
