@@ -453,7 +453,7 @@ function renderBay(type,id,bay,d,ed,spec,span){
   if(spec)h+=`<span class="spec">${esc(spec)}</span>`;
   if(d?.unit){
     h+=`<span class="unit">${esc(d.unit)}</span>`;
-    if(fleet)h+=`<span class="class-info">Class ${fleet.c} \u00b7 ${fleet.n}-car</span>`;
+    if(fleet)h+=`<span class="class-info">Class ${fleet.c} \u00b7 ${fleet.n}-car \u00b7 Lead: ${fleet.v[0]||''}</span>`;
     else if(d.vehicle)h+=`<span class="class-info">${esc(d.vehicle)}</span>`;
     h+=`<span class="info">${[d.worktype,d.exam,d.status].filter(Boolean).join(' \u00b7 ')}</span>`;
     // Trade summary
@@ -490,12 +490,12 @@ function renderQueue(items,tab,ed){
   else if(tab===3)filtered=items.filter(i=>(i.worktype||'')==='GWL'||i.tp==='sub'&&i.id==='GWL');
   else if(tab===4)filtered=items.filter(i=>getRag(i)==='r');
   filtered.sort((a,b)=>{const pa=parseInt((a.priority||'P5').replace('P',''))||5,pb=parseInt((b.priority||'P5').replace('P',''))||5;return pa-pb});
-  let h=`<table class="wtbl"><thead><tr><th>#</th><th>RAG</th><th>Unit</th><th>Class</th><th>Cars</th><th>Location</th><th>Work</th><th>Exam</th><th>Team</th><th>Priority</th><th>Status</th><th>Days</th><th>Release</th><th>Flags</th><th>Comments</th>${ed?'<th></th>':''}</tr></thead><tbody>`;
-  if(!filtered.length)h+=`<tr><td colspan="${ed?16:15}" style="text-align:center;padding:24px;color:var(--muted)">No items</td></tr>`;
+  let h=`<table class="wtbl"><thead><tr><th>#</th><th>RAG</th><th>Unit</th><th>Leading</th><th>Class</th><th>Cars</th><th>Location</th><th>Work</th><th>Exam</th><th>Team</th><th>Priority</th><th>Status</th><th>Days</th><th>Release</th><th>Flags</th><th>Comments</th>${ed?'<th></th>':''}</tr></thead><tbody>`;
+  if(!filtered.length)h+=`<tr><td colspan="${ed?17:16}" style="text-align:center;padding:24px;color:var(--muted)">No items</td></tr>`;
   filtered.forEach((it,idx)=>{const rag=getRag(it),days=getDays(it),dc=rag==='r'?'days-over':rag==='a'?'days-warn':'days-ok';
     const fleet=getFleet(it.unit);
     const click=ed?`onclick="openBM('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})"`:'';
-    h+=`<tr ${click}><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
+    h+=`<tr ${click}><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">${fleet?fleet.v[0]:''}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
     let flags='';if(it.thirdParty)flags+=`<span class="flag flag-3rd" style="font-size:9px">3RD PARTY</span> `;if(it.isolated)flags+=`<span class="flag flag-iso" style="font-size:9px">ISOLATED</span>`;h+=`<td>${flags}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(it.comments)}">${esc(it.comments)}</td>`;
     if(ed&&it.status!=='COMPLETE')h+=`<td><button class="rfs-btn" onclick="event.stopPropagation();markRFS('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})">&#10004; Ready</button></td>`;else if(ed)h+=`<td></td>`;h+=`</tr>`});
   return h+`</tbody></table>`;
