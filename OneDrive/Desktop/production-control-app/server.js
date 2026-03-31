@@ -38,7 +38,7 @@ function checkAuth(req, res, next) {
 app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
   if (req.body.password === SITE_PASSWORD) {
     const token = crypto.createHash('sha256').update(SITE_PASSWORD).digest('hex');
-    res.cookie('nlauth', token, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
+    res.cookie('nlauth', token, { httpOnly: true, sameSite: 'lax' });
     return res.redirect('/');
   }
   return res.send(loginPage('Incorrect password'));
