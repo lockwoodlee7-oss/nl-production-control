@@ -614,7 +614,18 @@ function onUnitInput(){
 }
 
 // BAY MODAL
-function openBM(type,id,bay){aRef={type,id,bay};const d=type==='road'?D.roads?.[id]?.[bay]:D.subSheds?.[id]?.[bay];document.getElementById('bmT').textContent=d?'Edit Bay':'Place Unit';document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
+function openBM(type,id,bay){
+  // Check if this bay is consumed by a spanning unit in an earlier bay
+  if(type==='road'){
+    for(let b=1;b<bay;b++){
+      const prev=D.roads?.[id]?.[b];
+      if(prev?.unit){
+        const span=getCarCount(prev.unit);
+        if(b+span-1>=bay){alert(`Bay ${bay} is occupied by ${prev.unit} (${span}-car unit spanning from Bay ${b})`);return}
+      }
+    }
+  }
+  aRef={type,id,bay};const d=type==='road'?D.roads?.[id]?.[bay]:D.subSheds?.[id]?.[bay];document.getElementById('bmT').textContent=d?'Edit Bay':'Place Unit';document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
   const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fWt:'worktype',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
   document.getElementById('f3rd').checked=!!d?.thirdParty;document.getElementById('fIso').checked=!!d?.isolated;
   // Leading vehicle — populate dropdown then set saved value
