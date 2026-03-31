@@ -535,12 +535,6 @@ function openBM(type,id,bay){aRef={type,id,bay};const d=type==='road'?D.roads?.[
   document.getElementById('f3rd').checked=!!d?.thirdParty;document.getElementById('fIso').checked=!!d?.isolated;
   // Trades
   const trades=d?.trades||{};
-  ['elec','mech','vb','asst','tp'].forEach(tk=>{
-    const t=trades[tk]||{};
-    document.getElementById('tr'+tk.charAt(0).toUpperCase()+tk.slice(1)).value=t.req||'0';
-    document.getElementById('tr'+tk.charAt(0).toUpperCase()+tk.slice(1)+'Done').checked=!!t.done;
-  });
-  // Fix trade IDs to match actual element IDs
   document.getElementById('trElec').value=(trades.elec||{}).req||'0';
   document.getElementById('trElecDone').checked=!!(trades.elec||{}).done;
   document.getElementById('trMech').value=(trades.mech||{}).req||'0';
