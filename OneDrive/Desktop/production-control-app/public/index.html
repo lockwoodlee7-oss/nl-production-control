@@ -197,6 +197,25 @@ main{padding:140px 24px 60px}
 .arch-result .ar-unit{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--text)}
 .arch-result .ar-detail{font-size:13px;color:var(--text2);margin-top:3px}
 .search-hit{outline:2px solid var(--orange);outline-offset:1px;border-radius:4px}
+/* Staff Matrix */
+.staff-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;cursor:pointer;user-select:none;border:1px solid var(--border);margin-bottom:8px;transition:all .15s}
+.staff-toggle:hover{border-color:var(--orange)}
+.staff-toggle h3{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px}
+.staff-toggle .st-arr{color:var(--muted);font-size:10px;transition:transform .2s}.staff-toggle.open .st-arr{transform:rotate(180deg)}
+.staff-body{display:none;padding:14px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;margin-top:-9px;margin-bottom:12px;background:var(--card)}
+.staff-body.open{display:block}
+.sm-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--border-light)}
+.sm-row:last-child{border-bottom:none;margin-bottom:0}
+.sm-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;color:var(--text);min-width:140px;text-transform:uppercase}
+.sm-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:13px;color:var(--text);outline:none;font-family:'Barlow',sans-serif}.sm-input:focus{border-color:var(--orange)}
+.sm-boxes{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.sm-box{width:70px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:12px;color:var(--text);outline:none;font-family:'Barlow',sans-serif;text-align:center}.sm-box:focus{border-color:var(--orange)}
+.sm-box::placeholder{color:var(--muted);font-size:10px}
+/* Task Assignment */
+.ta-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.ta-person{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:13px;color:var(--text);outline:none}.ta-person:focus{border-color:var(--orange)}
+.ta-task{flex:2;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:13px;color:var(--text);outline:none}.ta-task:focus{border-color:var(--orange)}
+.ta-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px}.ta-del:hover{color:var(--red)}
 .search-focus{outline:3px solid var(--orange);outline-offset:2px;animation:focusPulse 1.5s ease 3;border-radius:8px;scroll-margin-top:160px}
 @keyframes focusPulse{0%,100%{outline-color:var(--orange);box-shadow:0 0 0 0 rgba(244,121,59,0)}50%{outline-color:#f4793b;box-shadow:0 0 20px 4px rgba(244,121,59,.25)}}
 /* Fleet info banner in modal */
@@ -484,6 +503,65 @@ async function render(){
   tpl.forEach((sec,i)=>{const val=D.handover?.[sec.label]||'';h+=`<div class="ho-sec"><div class="ho-head"><span class="ho-lbl">${esc(sec.label)}</span>`;if(!sec.def&&ed)h+=`<button class="ho-del" onclick="delHoSec(${i})">&times;</button>`;h+=`</div>`;if(ed)h+=`<textarea class="ho-txt" data-sec="${esc(sec.label)}" oninput="onHo(this)" placeholder="Enter ${esc(sec.label.toLowerCase())} here...">${esc(val)}</textarea>`;else h+=`<textarea class="ho-txt" readonly>${esc(val||'(empty)')}</textarea>`;h+=`</div>`});
   if(ed)h+=`<button class="ho-add" onclick="openHM()">+ ADD SECTION</button>`;h+=`</div></div>`;
 
+  // STAFF MATRIX
+  if(!D.staffMatrix)D.staffMatrix={};
+  const sm=D.staffMatrix;
+  const STAFF_BOXES=[
+    {key:'lv4elec',label:'LV4 Electrical',count:10},
+    {key:'lv4mech',label:'LV4 Mechanical',count:10},
+    {key:'gwl',label:'GWL',count:5},
+    {key:'vb',label:'VB',count:4},
+    {key:'lv3',label:'LV3',count:8},
+    {key:'tri',label:'TRI',count:8},
+    {key:'caf',label:'CAF',count:8}
+  ];
+  h+=`<div class="panel"><div class="ph"><h2>Staff On Shift</h2><div style="display:flex;gap:6px">`;
+  if(ed)h+=`<button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="presentStaff()">Present to Team</button>`;
+  h+=`</div></div><div class="pb">`;
+  h+=`<div class="staff-toggle" id="smToggle" onclick="toggleStaffMatrix()"><h3>Staff Matrix</h3><span class="st-arr">&#9660;</span></div>`;
+  h+=`<div class="staff-body" id="smBody">`;
+  // Key roles
+  const keyRoles=[{key:'team',label:'Team On Shift'},{key:'spm',label:'Shift Production Manager'},{key:'lv6',label:'Level 6'},{key:'lv5c1',label:'Level 5C (1)'},{key:'lv5c2',label:'Level 5C (2)'}];
+  keyRoles.forEach(r=>{
+    h+=`<div class="sm-row"><span class="sm-label">${r.label}</span>`;
+    if(ed)h+=`<input class="sm-input" value="${esc(sm[r.key]||'')}" onchange="onStaff('${r.key}',this.value)" placeholder="Enter name...">`;
+    else h+=`<span style="font-size:13px;color:var(--text2)">${esc(sm[r.key]||'—')}</span>`;
+    h+=`</div>`;
+  });
+  // Boxes
+  STAFF_BOXES.forEach(sb=>{
+    if(!sm[sb.key])sm[sb.key]=[];
+    h+=`<div class="sm-row"><span class="sm-label">${sb.label} (${sb.count})</span><div class="sm-boxes">`;
+    for(let i=0;i<sb.count;i++){
+      const val=sm[sb.key][i]||'';
+      if(ed)h+=`<input class="sm-box" value="${esc(val)}" onchange="onStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}">`;
+      else h+=`<span class="sm-box" style="pointer-events:none">${esc(val||'—')}</span>`;
+    }
+    h+=`</div></div>`;
+  });
+  h+=`</div>`;
+
+  // TASK ASSIGNMENT
+  if(!D.taskAssign)D.taskAssign=[];
+  h+=`<div class="staff-toggle" id="taToggle" onclick="toggleTaskAssign()"><h3>Task Assignment</h3><span class="st-arr">&#9660;</span></div>`;
+  h+=`<div class="staff-body" id="taBody">`;
+  if(ed)h+=`<div style="display:flex;gap:8px;margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted)"><span style="flex:1">PERSON</span><span style="flex:2">TASK / ASSIGNMENT</span><span style="width:24px"></span></div>`;
+  D.taskAssign.forEach((ta,i)=>{
+    h+=`<div class="ta-row">`;
+    if(ed){
+      h+=`<input class="ta-person" value="${esc(ta.person||'')}" onchange="onTaskAssign(${i},'person',this.value)" placeholder="Name...">`;
+      h+=`<input class="ta-task" value="${esc(ta.task||'')}" onchange="onTaskAssign(${i},'task',this.value)" placeholder="Task / assignment...">`;
+      h+=`<button class="ta-del" onclick="delTaskAssign(${i})">&times;</button>`;
+    } else {
+      h+=`<span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">${esc(ta.person||'—')}</span>`;
+      h+=`<span style="flex:2;font-size:13px;color:var(--text2)">${esc(ta.task||'—')}</span>`;
+    }
+    h+=`</div>`;
+  });
+  if(ed)h+=`<button class="ho-add" style="margin-top:8px" onclick="addTaskAssign()">+ ASSIGN TASK</button>`;
+  h+=`</div>`;
+  h+=`</div></div>`;
+
   // HISTORY
   const hist=(await allKeys()).filter(k=>k!==actKey).slice(0,20);
   if(hist.length){h+=`<div class="hist-div"><span>Previous Shifts</span></div>`;hist.forEach((k,i)=>{const t=kType(k);h+=`<div class="hb"><div class="hh" onclick="toggleHist(this,${i},'${esc(k)}')"><h3>${esc(kLabel(k))} <span class="type ${t}" style="font-size:9px;padding:1px 6px;border-radius:4px">${t.toUpperCase()}</span></h3><span class="arr">&#9660;</span></div><div class="hbody" id="hb_${i}"></div></div>`})}
@@ -692,6 +770,110 @@ function openHM(){document.getElementById('hoModal').classList.add('open');docum
 function closeHM(){document.getElementById('hoModal').classList.remove('open')}
 async function addHoSec(){const name=document.getElementById('hoName').value.trim().toUpperCase();if(!name)return;const tpl=await getHoTpl();if(tpl.find(t=>t.label===name)){alert('Section already exists');return}tpl.push({label:name,def:0});await saveHoTpl(tpl);cachedTpl=tpl;closeHM();await render()}
 async function delHoSec(idx){const tpl=await getHoTpl();if(tpl[idx]?.def)return;if(!confirm('Remove section "'+tpl[idx].label+'"?'))return;tpl.splice(idx,1);await saveHoTpl(tpl);cachedTpl=tpl;await render()}
+
+// STAFF MATRIX
+function toggleStaffMatrix(){document.getElementById('smToggle').classList.toggle('open');document.getElementById('smBody').classList.toggle('open')}
+function toggleTaskAssign(){document.getElementById('taToggle').classList.toggle('open');document.getElementById('taBody').classList.toggle('open')}
+function onStaff(key,val){if(!D.staffMatrix)D.staffMatrix={};D.staffMatrix[key]=val;autoS()}
+function onStaffBox(key,idx,val){if(!D.staffMatrix)D.staffMatrix={};if(!D.staffMatrix[key])D.staffMatrix[key]=[];D.staffMatrix[key][idx]=val;autoS()}
+function onTaskAssign(idx,field,val){if(!D.taskAssign)D.taskAssign=[];if(!D.taskAssign[idx])D.taskAssign[idx]={};D.taskAssign[idx][field]=val;autoS()}
+function addTaskAssign(){if(!D.taskAssign)D.taskAssign=[];D.taskAssign.push({person:'',task:''});autoS();render()}
+function delTaskAssign(idx){if(!D.taskAssign)return;D.taskAssign.splice(idx,1);autoS();render()}
+
+// PRESENT STAFF — opens full-screen window
+function presentStaff(){
+  const sm=D.staffMatrix||{};
+  const ta=D.taskAssign||[];
+  const BOXES=[
+    {key:'lv4elec',label:'LV4 ELECTRICAL',count:10},
+    {key:'lv4mech',label:'LV4 MECHANICAL',count:10},
+    {key:'gwl',label:'GWL',count:5},
+    {key:'vb',label:'VB',count:4},
+    {key:'lv3',label:'LV3',count:8},
+    {key:'tri',label:'TRI',count:8},
+    {key:'caf',label:'CAF',count:8}
+  ];
+  const roles=[
+    {key:'team',label:'TEAM ON SHIFT'},
+    {key:'spm',label:'SHIFT PRODUCTION MANAGER'},
+    {key:'lv6',label:'LEVEL 6'},
+    {key:'lv5c1',label:'LEVEL 5C'},
+    {key:'lv5c2',label:'LEVEL 5C'}
+  ];
+  const shiftLabel=kLabel(actKey);
+  const isDay=kType(actKey)==='day';
+
+  let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Staff On Shift \u2014 Neville Hill TCC</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Barlow',sans-serif;background:#0d1017;color:#e2e8f0;min-height:100vh;padding:30px 40px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #f4793b}
+.header-left{display:flex;align-items:center;gap:16px}
+.logo-circle{width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;color:#1a1f3a}
+.header h1{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;color:#fff}
+.header .sub{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-top:2px}
+.shift-info{text-align:right}
+.shift-info .shift-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#fff}
+.shift-info .shift-type{display:inline-block;padding:3px 12px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;margin-top:4px}
+.shift-type.day{background:rgba(37,99,235,.2);color:#93c5fd}
+.shift-type.night{background:rgba(124,58,237,.2);color:#c4b5fd}
+.northern-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.2);text-transform:uppercase;margin-top:4px}
+.section{margin-bottom:20px}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;color:#f4793b;margin-bottom:10px;text-transform:uppercase}
+.roles-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.role-card{background:#161b26;border:1px solid #232a38;border-radius:10px;padding:12px 14px;text-align:center}
+.role-card .rc-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:4px}
+.role-card .rc-name{font-family:'Barlow',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.grade-section{margin-bottom:12px}
+.grade-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.grade-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.5);min-width:150px;text-transform:uppercase}
+.grade-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:#f4793b;font-weight:600}
+.names-grid{display:flex;gap:6px;flex-wrap:wrap;margin-left:160px}
+.name-tag{background:#161b26;border:1px solid #232a38;border-radius:6px;padding:6px 14px;font-size:14px;font-weight:600;color:#e2e8f0;min-width:80px;text-align:center}
+.name-tag.empty{opacity:.15;border-style:dashed}
+.tasks-section{margin-top:20px;padding-top:16px;border-top:1px solid #232a38}
+.task-row{display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid #1e2530}
+.task-person{font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;color:#fff;min-width:160px}
+.task-desc{font-size:14px;color:#cbd5e1;flex:1}
+.task-arrow{color:#f4793b;font-size:12px}
+.footer{margin-top:24px;padding-top:12px;border-top:1px solid #232a38;display:flex;align-items:center;justify-content:space-between}
+.footer .time{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.3)}
+.footer .brand{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.15);text-transform:uppercase}
+@media print{body{background:#fff;color:#000;padding:20px}.header{border-bottom-color:#f4793b}.role-card,.name-tag{background:#f5f5f5;border-color:#ddd}.role-card .rc-name,.task-person{color:#000}.name-tag{color:#000}.grade-label,.section-title{color:#333}.footer .brand{color:#999}}
+</style></head><body>`;
+
+  html+=`<div class="header"><div class="header-left"><div class="logo-circle">NL</div><div><h1>STAFF ON SHIFT</h1><div class="sub">NEVILLE HILL \u2014 REPAIR SHED OPERATIONS</div><div class="northern-badge">NORTHERN TRAINS</div></div></div>`;
+  html+=`<div class="shift-info"><div class="shift-name">${esc(shiftLabel)}</div><div class="shift-type ${isDay?'day':'night'}">${isDay?'DAY SHIFT':'NIGHT SHIFT'}</div></div></div>`;
+
+  html+=`<div class="section"><div class="section-title">Key Roles</div><div class="roles-grid">`;
+  roles.forEach(r=>{html+=`<div class="role-card"><div class="rc-label">${r.label}</div><div class="rc-name">${esc(sm[r.key]||'\u2014')}</div></div>`});
+  html+=`</div></div>`;
+
+  html+=`<div class="section"><div class="section-title">Staff by Grade</div>`;
+  BOXES.forEach(sb=>{
+    const arr=sm[sb.key]||[];
+    const filled=arr.filter(v=>v&&v.trim()).length;
+    html+=`<div class="grade-section"><div class="grade-header"><span class="grade-label">${sb.label}</span><span class="grade-count">${filled} / ${sb.count}</span></div><div class="names-grid">`;
+    for(let i=0;i<sb.count;i++){const v=arr[i]||'';html+=v?`<span class="name-tag">${esc(v)}</span>`:`<span class="name-tag empty"></span>`}
+    html+=`</div></div>`;
+  });
+  html+=`</div>`;
+
+  if(ta.length){
+    html+=`<div class="tasks-section"><div class="section-title">Task Assignments</div>`;
+    ta.forEach(t=>{if(t.person||t.task)html+=`<div class="task-row"><span class="task-person">${esc(t.person||'\u2014')}</span><span class="task-arrow">&#9654;</span><span class="task-desc">${esc(t.task||'\u2014')}</span></div>`});
+    html+=`</div>`;
+  }
+
+  html+=`<div class="footer"><span class="time">${new Date().toLocaleString('en-GB')}</span><span class="brand">Neville Hill TCC \u2014 Production Control</span></div>`;
+  html+=`</body></html>`;
+
+  const w=window.open('','_blank','width=1200,height=800');
+  w.document.write(html);
+  w.document.close();
+}
 
 // LINKS
 function openLM(){document.getElementById('linkModal').classList.add('open');['lName','lVal','lUrl'].forEach(id=>document.getElementById(id).value='');setTimeout(()=>document.getElementById('lName').focus(),100)}
