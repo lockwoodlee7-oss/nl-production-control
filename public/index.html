@@ -973,6 +973,9 @@ async function render(){
     document.getElementById('mc').innerHTML=h;
   }
   restoreSections();
+  // Restore staff matrix / task assignment open state
+  if(smOpen){document.getElementById('smToggle')?.classList.add('open');document.getElementById('smBody')?.classList.add('open')}
+  if(taOpen){document.getElementById('taToggle')?.classList.add('open');document.getElementById('taBody')?.classList.add('open')}
   if(ed)setupDD();
   if(planMode){setupPlanDD();renderTimeline()}
 }
@@ -1419,8 +1422,9 @@ function restoreSections(){
 }
 
 // STAFF MATRIX
-function toggleStaffMatrix(){document.getElementById('smToggle').classList.toggle('open');document.getElementById('smBody').classList.toggle('open')}
-function toggleTaskAssign(){document.getElementById('taToggle').classList.toggle('open');document.getElementById('taBody').classList.toggle('open')}
+let smOpen=false,taOpen=false;
+function toggleStaffMatrix(){smOpen=!smOpen;document.getElementById('smToggle').classList.toggle('open',smOpen);document.getElementById('smBody').classList.toggle('open',smOpen)}
+function toggleTaskAssign(){taOpen=!taOpen;document.getElementById('taToggle').classList.toggle('open',taOpen);document.getElementById('taBody').classList.toggle('open',taOpen)}
 function autoSNoRender(){clearTimeout(saveTmr);saveTmr=setTimeout(()=>saveD(),500)}
 
 function loadTeamRoster(){
