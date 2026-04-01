@@ -890,9 +890,9 @@ async function render(){
   h+=`<div class="staff-body" id="smBody">`;
   // Team selector
   if(ed){
-    h+=`<div class="team-sel"><label>Load Team</label><select id="teamSelect"><option value="">— Select Team —</option>`;
+    h+=`<div class="team-sel"><label>Load Team</label><select id="teamSelect" onchange="loadTeamRoster()"><option value="">— Select Team —</option>`;
     Object.keys(TEAM_ROSTERS).forEach(t=>{h+=`<option value="${esc(t)}" ${sm.team===t?'selected':''}>${esc(t)}</option>`});
-    h+=`</select><button class="ts-btn" onclick="loadTeamRoster()">Auto-Fill</button></div>`;
+    h+=`</select></div>`;
   }
   // Datalists for autocomplete
   const curTeam=TEAM_ROSTERS[sm.team]||{};
@@ -1430,7 +1430,7 @@ function autoSNoRender(){clearTimeout(saveTmr);saveTmr=setTimeout(()=>saveD(),50
 function loadTeamRoster(){
   const sel=document.getElementById('teamSelect');
   const team=sel?sel.value:'';
-  if(!team||!TEAM_ROSTERS[team]){alert('Select a team first');return}
+  if(!team||!TEAM_ROSTERS[team])return;
   const r=TEAM_ROSTERS[team];
   if(!D.staffMatrix)D.staffMatrix={};
   D.staffMatrix.team=team;
