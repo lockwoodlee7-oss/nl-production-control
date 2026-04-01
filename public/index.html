@@ -197,6 +197,11 @@ main{padding:140px 24px 60px}
 .arch-result .ar-unit{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--text)}
 .arch-result .ar-detail{font-size:13px;color:var(--text2);margin-top:3px}
 .search-hit{outline:2px solid var(--orange);outline-offset:1px;border-radius:4px}
+/* Collapsible Sections */
+.coll-toggle{cursor:pointer;user-select:none;transition:all .15s}.coll-toggle:hover{background:rgba(244,121,59,.02)}
+.coll-toggle .st-arr{color:var(--muted);font-size:10px;transition:transform .2s;margin-left:auto}
+.coll-toggle.open .st-arr{transform:rotate(180deg)}
+.coll-body{display:none}.coll-body.open{display:block}
 /* Staff Matrix */
 .staff-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;cursor:pointer;user-select:none;border:1px solid var(--border);margin-bottom:8px;transition:all .15s}
 .staff-toggle:hover{border-color:var(--orange)}
@@ -506,10 +511,10 @@ async function render(){
   let rG=0,rA=0,rR=0;items.forEach(it=>{const r=getRag(it);if(r==='g')rG++;else if(r==='r')rR++;else rA++});
   h+=`<div class="panel"><div class="pb"><div class="rag-cards"><div class="rag-card rc-green"><div class="rc-num">${rG}</div><div class="rc-lbl">Ready / Complete</div></div><div class="rag-card rc-amber"><div class="rc-num">${rA}</div><div class="rc-lbl">Under Maintenance</div></div><div class="rag-card rc-red"><div class="rc-num">${rR}</div><div class="rc-lbl">Not Fit / Overdue</div></div></div></div></div>`;
 
-  // ROAD STATUS
-  h+=`<div class="panel"><div class="ph"><h2>Road Status</h2></div><div class="pb"><div class="road-status">`;
+  // ROAD STATUS (collapsible)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('roadStatus')"><h2>Road Status</h2><span class="st-arr" id="arr_roadStatus">&#9660;</span></div><div class="coll-body" id="sec_roadStatus"><div class="pb"><div class="road-status">`;
   ROADS.forEach(rc=>{const rs=D.roadStatus?.[rc.num]||{};h+=`<div class="rs-road"><span class="rs-name">Road ${rc.num}</span><span class="rs-tog ${rs.dp?'dp-on':'dp-off'}" onclick="${ed?`toggleRS(${rc.num},'dp')`:''}" ${!ed?'style="pointer-events:none"':''}>${rs.dp?'DP: ON':'DP: OFF'}</span>`;if(rc.elec)h+=`<span class="rs-tog ${rs.oleIso?'ole-iso':'ole-live'}" onclick="${ed?`toggleRS(${rc.num},'oleIso')`:''}" ${!ed?'style="pointer-events:none"':''}>${rs.oleIso?'OLE: ISOLATED':'OLE: LIVE'}</span>`;h+=`</div>`});
-  h+=`</div></div></div>`;
+  h+=`</div></div></div></div>`;
 
   // REPAIR SHED
   h+=`<div class="panel"><div class="ph"><h2>Repair Shed</h2><span class="badge">${items.length} units</span></div><div class="pb"><div class="shed-grid">`;
@@ -538,12 +543,12 @@ async function render(){
   SUBS.forEach(s=>{h+=`<div class="sub-shed"><div class="sub-shed-label">${s}</div><div class="road-bays">`;for(let b=1;b<=4;b++)h+=renderBay('sub',s,b,D.subSheds?.[s]?.[b],ed,null,1);h+=`</div></div>`});
   h+=`</div></div></div>`;
 
-  // RUNNING ORDER
-  h+=`<div class="panel"><div class="tabs" id="qTabs">`;['All','B Exam','UFC','GWL','Stopped / Overdue'].forEach((t,i)=>{h+=`<div class="tab ${i===0?'active':''}" onclick="switchTab(${i})">${t}</div>`});h+=`</div><div class="pb" style="padding:0;overflow-x:auto" id="qBody">${renderQueue(items,0,ed)}</div></div>`;
+  // RUNNING ORDER (collapsible)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('runOrder')"><h2>Running Order</h2><span class="badge">${items.length} units</span><span class="st-arr" id="arr_runOrder">&#9660;</span></div><div class="coll-body" id="sec_runOrder"><div class="tabs" id="qTabs">`;['All','B Exam','UFC','GWL','Stopped / Overdue'].forEach((t,i)=>{h+=`<div class="tab ${i===0?'active':''}" onclick="switchTab(${i})">${t}</div>`});h+=`</div><div class="pb" style="padding:0;overflow-x:auto" id="qBody">${renderQueue(items,0,ed)}</div></div></div>`;
 
-  // SERVICE SHED
+  // SERVICE SHED PRIORITY MOVES (collapsible)
   if(!D.serviceShed)D.serviceShed={};
-  h+=`<div class="panel"><div class="ph"><h2>Service Shed Running Order</h2></div><div class="pb"><div class="svc-grid">`;
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('svcShed')"><h2>Service Shed Priority Moves</h2><span class="st-arr" id="arr_svcShed">&#9660;</span></div><div class="coll-body" id="sec_svcShed"><div class="pb"><div class="svc-grid">`;
   for(let i=1;i<=SVC_SLOTS;i++){
     const s=D.serviceShed[i]||{};
     h+=`<div class="svc-slot"><span class="svc-num">${i}</span>`;
@@ -556,13 +561,13 @@ async function render(){
     }
     h+=`</div>`;
   }
-  h+=`</div></div></div>`;
+  h+=`</div></div></div></div>`;
 
-  // AWAITING ATTENTION
+  // AWAITING ATTENTION (collapsible)
   if(!D.awaiting)D.awaiting=[];
-  h+=`<div class="panel"><div class="ph"><h2>Units On Site — Awaiting Attention</h2><span class="badge">${D.awaiting.length}</span>`;
-  if(ed)h+=`<button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="openAW(-1)">+ Add Unit</button>`;
-  h+=`</div><div class="pb" style="padding:0;overflow-x:auto">`;
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('awaiting')"><h2>Units On Site — Awaiting Attention</h2><span class="badge">${D.awaiting.length}</span>`;
+  if(ed)h+=`<button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="event.stopPropagation();openAW(-1)">+ Add Unit</button>`;
+  h+=`<span class="st-arr" id="arr_awaiting">&#9660;</span></div><div class="coll-body" id="sec_awaiting"><div class="pb" style="padding:0;overflow-x:auto">`;
   if(!D.awaiting.length){
     h+=`<p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">No units awaiting attention</p>`;
   } else {
@@ -586,17 +591,17 @@ async function render(){
     });
     h+=`</tbody></table>`;
   }
-  h+=`</div></div>`;
+  h+=`</div></div></div>`;
 
-  // LINKS
-  h+=`<div class="panel"><div class="ph"><h2>Useful Numbers & Links</h2><button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="openLM()">+ Add</button></div><div class="pb">`;
+  // LINKS (collapsible)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('links')"><h2>Useful Numbers & Links</h2><button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="event.stopPropagation();openLM()">+ Add</button><span class="st-arr" id="arr_links">&#9660;</span></div><div class="coll-body" id="sec_links"><div class="pb">`;
   if(!links.length)h+=`<p style="color:var(--muted);font-size:13px;text-align:center;padding:10px">No links yet. Click Add to create references.</p>`;
-  links.forEach((l,i)=>{h+=`<div class="link-item"><span class="li-name">${esc(l.name)}</span>`;if(l.value)h+=`<span class="li-val">${esc(l.value)}</span>`;if(l.url)h+=`<a href="${esc(l.url)}" target="_blank" rel="noopener">Open &#8599;</a>`;h+=`<button class="li-del" onclick="delLink(${i})">&times;</button></div>`});h+=`</div></div>`;
+  links.forEach((l,i)=>{h+=`<div class="link-item"><span class="li-name">${esc(l.name)}</span>`;if(l.value)h+=`<span class="li-val">${esc(l.value)}</span>`;if(l.url)h+=`<a href="${esc(l.url)}" target="_blank" rel="noopener">Open &#8599;</a>`;h+=`<button class="li-del" onclick="delLink(${i})">&times;</button></div>`});h+=`</div></div></div>`;
 
-  // HANDOVER
-  h+=`<div class="panel"><div class="ph"><h2>Shift Handover</h2></div><div class="pb">`;
+  // HANDOVER (collapsible)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('handover')"><h2>Shift Handover</h2><span class="st-arr" id="arr_handover">&#9660;</span></div><div class="coll-body" id="sec_handover"><div class="pb">`;
   tpl.forEach((sec,i)=>{const val=D.handover?.[sec.label]||'';h+=`<div class="ho-sec"><div class="ho-head"><span class="ho-lbl">${esc(sec.label)}</span>`;if(!sec.def&&ed)h+=`<button class="ho-del" onclick="delHoSec(${i})">&times;</button>`;h+=`</div>`;if(ed)h+=`<textarea class="ho-txt" data-sec="${esc(sec.label)}" oninput="onHo(this)" placeholder="Enter ${esc(sec.label.toLowerCase())} here...">${esc(val)}</textarea>`;else h+=`<textarea class="ho-txt" readonly>${esc(val||'(empty)')}</textarea>`;h+=`</div>`});
-  if(ed)h+=`<button class="ho-add" onclick="openHM()">+ ADD SECTION</button>`;h+=`</div></div>`;
+  if(ed)h+=`<button class="ho-add" onclick="openHM()">+ ADD SECTION</button>`;h+=`</div></div></div>`;
 
   // STAFF MATRIX
   if(!D.staffMatrix)D.staffMatrix={};
@@ -668,6 +673,7 @@ async function render(){
   } else {
     document.getElementById('mc').innerHTML=h;
   }
+  restoreSections();
   if(ed)setupDD();
   if(planMode){setupPlanDD();renderTimeline()}
 }
@@ -884,6 +890,27 @@ function openHM(){document.getElementById('hoModal').classList.add('open');docum
 function closeHM(){document.getElementById('hoModal').classList.remove('open')}
 async function addHoSec(){const name=document.getElementById('hoName').value.trim().toUpperCase();if(!name)return;const tpl=await getHoTpl();if(tpl.find(t=>t.label===name)){alert('Section already exists');return}tpl.push({label:name,def:0});await saveHoTpl(tpl);cachedTpl=tpl;closeHM();await render()}
 async function delHoSec(idx){const tpl=await getHoTpl();if(tpl[idx]?.def)return;if(!confirm('Remove section "'+tpl[idx].label+'"?'))return;tpl.splice(idx,1);await saveHoTpl(tpl);cachedTpl=tpl;await render()}
+
+// COLLAPSIBLE SECTIONS
+const openSections=new Set(['roadStatus','runOrder','svcShed','awaiting','links','handover']);
+function toggleSection(id){
+  const body=document.getElementById('sec_'+id);
+  const arr=document.getElementById('arr_'+id);
+  const hdr=arr?.closest('.coll-toggle');
+  if(!body)return;
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open');
+  if(hdr)hdr.classList.toggle('open');
+  if(isOpen)openSections.delete(id);else openSections.add(id);
+}
+function restoreSections(){
+  openSections.forEach(id=>{
+    const body=document.getElementById('sec_'+id);
+    const arr=document.getElementById('arr_'+id);
+    const hdr=arr?.closest('.coll-toggle');
+    if(body){body.classList.add('open');if(hdr)hdr.classList.add('open')}
+  });
+}
 
 // STAFF MATRIX
 function toggleStaffMatrix(){document.getElementById('smToggle').classList.toggle('open');document.getElementById('smBody').classList.toggle('open')}
