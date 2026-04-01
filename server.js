@@ -15,7 +15,12 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-const SITE_PASSWORD = process.env.SITE_PASSWORD || 'NL1!';
+let SITE_PASSWORD = process.env.SITE_PASSWORD || 'NL1!';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'NLAdmin!';
+
+function hashPw(pw) {
+  return crypto.createHash('sha256').update(pw).digest('hex');
+}
 
 // Password protection middleware
 app.use(express.json({ limit: '10mb' }));
@@ -24,10 +29,9 @@ app.use(require('cookie-parser')());
 function checkAuth(req, res, next) {
   // Allow login page and login POST through
   if (req.path === '/login' || req.path === '/login.html') return next();
-  // Check auth cookie
+  // Check auth cookie — admin or regular
   const token = req.cookies?.nlauth;
-  const expected = crypto.createHash('sha256').update(SITE_PASSWORD).digest('hex');
-  if (token === expected) return next();
+  if (token === hashPw(ADMIN_PASSWORD) || token === hashPw(SITE_PASSWORD)) return next();
   // Not authed — serve login page
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -35,10 +39,18 @@ function checkAuth(req, res, next) {
   return res.send(loginPage());
 }
 
+function isAdmin(req) {
+  return req.cookies?.nlauth === hashPw(ADMIN_PASSWORD);
+}
+
 app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
-  if (req.body.password === SITE_PASSWORD) {
-    const token = crypto.createHash('sha256').update(SITE_PASSWORD).digest('hex');
-    res.cookie('nlauth', token, { httpOnly: true, sameSite: 'lax' });
+  const pw = req.body.password;
+  if (pw === ADMIN_PASSWORD) {
+    res.cookie('nlauth', hashPw(ADMIN_PASSWORD), { httpOnly: true, sameSite: 'lax' });
+    return res.redirect('/');
+  }
+  if (pw === SITE_PASSWORD) {
+    res.cookie('nlauth', hashPw(SITE_PASSWORD), { httpOnly: true, sameSite: 'lax' });
     return res.redirect('/');
   }
   return res.send(loginPage('Incorrect password'));
@@ -75,6 +87,33 @@ ${error ? `<div class="err">${error}</div>` : ''}
 
 app.use(checkAuth);
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ═══ ADMIN ENDPOINTS ═══
+
+// Check if current user is admin
+app.get('/api/auth/me', (req, res) => {
+  res.json({ admin: isAdmin(req) });
+});
+
+// Get connected user count
+app.get('/api/admin/users', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const count = io.engine.clientsCount;
+  res.json({ count });
+});
+
+// Change site password (admin only)
+app.post('/api/admin/password', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 3) {
+    return res.status(400).json({ error: 'Password must be at least 3 characters' });
+  }
+  SITE_PASSWORD = newPassword;
+  // Note: this changes the runtime password. To persist across restarts,
+  // update the SITE_PASSWORD env var in Railway.
+  res.json({ ok: true, note: 'Password changed for this session. Update SITE_PASSWORD env var in Railway to persist.' });
+});
 
 // Init DB table
 async function initDB() {
@@ -218,10 +257,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Socket.io
+// Socket.io — track connected users
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
+  // Broadcast updated user count to all clients
+  io.emit('user-count', { count: io.engine.clientsCount });
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    io.emit('user-count', { count: io.engine.clientsCount });
+  });
 });
 
 const PORT = process.env.PORT || 3000;

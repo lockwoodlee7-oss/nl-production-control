@@ -295,6 +295,17 @@ body.dark .plan-side{background:var(--card)}
 .swap-confirm .swap-from,.swap-confirm .swap-to{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--text);letter-spacing:1px}
 .swap-confirm .swap-arrow{font-size:24px;color:var(--orange);margin:8px 0}
 .swap-confirm .swap-info{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6}
+/* Admin & User Count */
+.admin-badge{padding:3px 8px;border-radius:5px;background:rgba(124,58,237,.15);color:#c4b5fd;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1px}
+.user-count{display:flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);cursor:default}
+.user-count .uc-dot{width:6px;height:6px;border-radius:50%;background:#059669}
+.admin-panel .ap-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light)}
+.admin-panel .ap-row:last-child{border-bottom:none}
+.admin-panel .ap-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--muted);min-width:140px;text-transform:uppercase}
+.admin-panel .ap-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--text)}
+.admin-panel .ap-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace}.ap-input:focus{border-color:var(--orange)}
+.admin-panel .ap-msg{font-size:11px;color:var(--green-t);font-weight:600;margin-top:6px;display:none}
+.admin-panel .ap-msg.show{display:block}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -317,8 +328,11 @@ body.dark .plan-side{background:var(--card)}
   <button class="tb" id="btnDark" onclick="toggleDark()">&#9790; Dark</button>
   <span class="clock" id="clock"></span>
   <span class="shift-pill" id="shiftPill"></span>
+  <span class="user-count" id="userCount" title="Connected users"><span class="uc-dot"></span><span id="ucNum">1</span> online</span>
   <span class="save-ind"><span class="dot" id="saveDot"></span><span id="saveTxt">Saved</span></span>
   <span class="conn-status" id="connStatus">&#9679; Live</span>
+  <span class="admin-badge" id="adminBadge" style="display:none">ADMIN</span>
+  <button class="tb" id="btnAdmin" onclick="openAdmin()" style="display:none">&#9881; Admin</button>
 </div>
 <div class="shift-nav">
   <button class="sn-btn" onclick="prevShift()">&#9664; Previous</button>
@@ -406,6 +420,25 @@ body.dark .plan-side{background:var(--card)}
   </div>
 </div>
 <div class="mf"><button class="btn btn-x" onclick="closeSwap()">Cancel</button><button class="btn btn-s" style="background:#059669" onclick="executeSwapover()">Confirm Swapover</button></div></div></div>
+
+<!-- ADMIN PANEL MODAL -->
+<div class="modal-bg" id="adminModal"><div class="modal" style="width:480px"><div class="mh"><h2>&#9881; Admin Panel</h2><button class="mx" onclick="closeAdmin()">&times;</button></div>
+<div class="mbody admin-panel">
+  <div class="ap-row"><span class="ap-label">Connected Users</span><span class="ap-val" id="apUsers">—</span></div>
+  <div class="ap-row"><span class="ap-label">Current Shift</span><span class="ap-val" id="apShift">—</span></div>
+  <div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border)">
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;color:var(--text);margin-bottom:12px">CHANGE SITE PASSWORD</h3>
+    <div class="ap-row" style="border:none"><span class="ap-label">New Password</span><input type="text" class="ap-input" id="apNewPw" placeholder="Enter new password..." autocomplete="off"></div>
+    <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="changePassword()">Update Password</button>
+    <div class="ap-msg" id="apPwMsg"></div>
+    <p style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5">Note: This changes the password for the current session. To make it permanent, also update the SITE_PASSWORD environment variable in Railway.</p>
+  </div>
+  <div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border)">
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;color:var(--text);margin-bottom:8px">ADMIN INFO</h3>
+    <p style="font-size:12px;color:var(--muted);line-height:1.6">Admin password is set via the ADMIN_PASSWORD environment variable in Railway. Regular users log in with the site password. Admin users can access this panel and manage settings.</p>
+  </div>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeAdmin()">Close</button></div></div></div>
 
 <!-- ADD HANDOVER SECTION MODAL -->
 <div class="modal-bg" id="hoModal"><div class="modal" style="width:380px"><div class="mh"><h2>Add Handover Section</h2><button class="mx" onclick="closeHM()">&times;</button></div>
@@ -1464,6 +1497,47 @@ async function executeSwapover(){
   await render();
 }
 
+// ═══ ADMIN & USER COUNT ═══
+let isAdminUser=false;
+
+async function checkAdmin(){
+  try{
+    const r=await apiGet('/api/auth/me');
+    isAdminUser=r&&r.admin;
+    document.getElementById('adminBadge').style.display=isAdminUser?'':'none';
+    document.getElementById('btnAdmin').style.display=isAdminUser?'':'none';
+  }catch(e){}
+}
+
+socket.on('user-count',(msg)=>{
+  document.getElementById('ucNum').textContent=msg.count;
+});
+
+function openAdmin(){
+  if(!isAdminUser)return;
+  document.getElementById('apUsers').textContent=document.getElementById('ucNum').textContent;
+  document.getElementById('apShift').textContent=kLabel(curKey);
+  document.getElementById('apNewPw').value='';
+  document.getElementById('apPwMsg').classList.remove('show');
+  document.getElementById('adminModal').classList.add('open');
+}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('open')}
+
+async function changePassword(){
+  const pw=document.getElementById('apNewPw').value.trim();
+  if(!pw||pw.length<3){alert('Password must be at least 3 characters');return}
+  try{
+    const r=await fetch('/api/admin/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newPassword:pw})});
+    const data=await r.json();
+    if(r.ok){
+      const msg=document.getElementById('apPwMsg');
+      msg.textContent='Password updated successfully. Update SITE_PASSWORD in Railway to persist.';
+      msg.classList.add('show');
+      document.getElementById('apNewPw').value='';
+    }else{alert(data.error||'Failed to change password')}
+  }catch(e){alert('Error changing password')}
+}
+
 // Auto-save reminder every 6 hours
 setInterval(()=>{if(actKey===curKey)saveD()},6*60*60*1000);
 
@@ -1506,7 +1580,7 @@ function initDark(){const pref=localStorage.getItem(LS_DARK);const h=new Date().
 function startClock(){function tick(){const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const p=document.getElementById('shiftPill');if(h>=6&&h<18){p.textContent='DAY';p.className='shift-pill day'}else{p.textContent='NIGHT';p.className='shift-pill night'}}tick();setInterval(tick,1000)}
 
 // INIT
-window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock()});
+window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock();checkAdmin()});
 </script>
 </body>
 </html>
