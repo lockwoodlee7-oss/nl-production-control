@@ -306,6 +306,52 @@ body.dark .plan-side{background:var(--card)}
 .admin-panel .ap-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace}.ap-input:focus{border-color:var(--orange)}
 .admin-panel .ap-msg{font-size:11px;color:var(--green-t);font-weight:600;margin-top:6px;display:none}
 .admin-panel .ap-msg.show{display:block}
+/* Admin tabs */
+.adm-tabs{display:flex;border-bottom:2px solid var(--border);padding:0}
+.adm-tab{padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;text-transform:uppercase}.adm-tab:hover{color:var(--text)}.adm-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.adm-page{display:none;padding:16px 20px}.adm-page.active{display:block}
+.adm-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border-light)}
+.adm-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.adm-section h3{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.5px;color:var(--text);margin-bottom:8px;text-transform:uppercase}
+.adm-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.5px}.adm-btn:hover{border-color:var(--orange);color:var(--orange)}
+.adm-btn.danger{border-color:var(--red);color:var(--red)}.adm-btn.danger:hover{background:var(--red);color:#fff}
+.adm-btn.success{border-color:var(--green);color:var(--green-t)}.adm-btn.success:hover{background:var(--green);color:#fff}
+/* Stats cards */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-card{padding:10px;border-radius:8px;text-align:center;background:var(--bg);border:1px solid var(--border)}
+.stat-card .sc-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--text)}
+.stat-card .sc-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+/* Log table */
+.log-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.log-tbl th{padding:5px 8px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)}
+.log-tbl td{padding:5px 8px;border-bottom:1px solid var(--border-light);color:var(--text2);font-size:11px}
+.log-tbl .log-action{font-weight:700;color:var(--text)}
+.log-tbl .log-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+/* Shift list in admin */
+.adm-shift{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--border-light);margin-bottom:4px;transition:all .15s}
+.adm-shift:hover{border-color:var(--border)}
+.adm-shift .as-label{flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
+.adm-shift .as-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+/* Fleet editor */
+.fleet-row{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.fleet-row input{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px;color:var(--text);outline:none;font-family:'JetBrains Mono',monospace}.fleet-row input:focus{border-color:var(--orange)}
+/* Announcement banner */
+.announce-bar{position:fixed;top:50px;left:0;right:0;z-index:95;padding:8px 20px;display:none;align-items:center;justify-content:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-align:center;animation:announceIn .3s ease}
+.announce-bar.show{display:flex}
+.announce-bar.a-info{background:var(--blue-bg);color:var(--blue-t);border-bottom:2px solid var(--blue)}
+.announce-bar.a-warning{background:var(--amber-bg);color:var(--amber-t);border-bottom:2px solid var(--amber)}
+.announce-bar.a-danger{background:var(--red-bg);color:var(--red-t);border-bottom:2px solid var(--red);animation:announceIn .3s ease,announcePulse 2s infinite}
+@keyframes announceIn{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes announcePulse{0%,100%{opacity:1}50%{opacity:.7}}
+body.has-announce .shift-nav{top:83px}
+body.has-announce .search-bar{top:125px}
+body.has-announce .timeline-bar{top:125px}
+body.has-announce main{padding-top:170px}
+body.has-announce.plan-mode .search-bar{top:169px}
+body.has-announce.plan-mode main{padding-top:214px}
+/* Lock indicator */
+.lock-badge{padding:3px 8px;border-radius:5px;background:rgba(220,38,38,.15);color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1px;display:none}
+.lock-badge.show{display:inline-block}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -334,9 +380,10 @@ body.dark .plan-side{background:var(--card)}
   <span class="admin-badge" id="adminBadge" style="display:none">ADMIN</span>
   <button class="tb" id="btnAdmin" onclick="openAdmin()" style="display:none">&#9881; Admin</button>
 </div>
+<div class="announce-bar" id="announceBar"><span id="announceMsg"></span></div>
 <div class="shift-nav">
   <button class="sn-btn" onclick="prevShift()">&#9664; Previous</button>
-  <div class="sn-label" id="shiftLabel"></div>
+  <div class="sn-label" id="shiftLabel"></div><span class="lock-badge" id="lockBadge">&#128274; LOCKED</span>
   <button class="sn-btn" onclick="goCurrentShift()">Current</button>
   <button class="sn-btn primary" onclick="openNewShift()">+ New Shift</button>
 </div>
@@ -422,22 +469,111 @@ body.dark .plan-side{background:var(--card)}
 <div class="mf"><button class="btn btn-x" onclick="closeSwap()">Cancel</button><button class="btn btn-s" style="background:#059669" onclick="executeSwapover()">Confirm Swapover</button></div></div></div>
 
 <!-- ADMIN PANEL MODAL -->
-<div class="modal-bg" id="adminModal"><div class="modal" style="width:480px"><div class="mh"><h2>&#9881; Admin Panel</h2><button class="mx" onclick="closeAdmin()">&times;</button></div>
-<div class="mbody admin-panel">
-  <div class="ap-row"><span class="ap-label">Connected Users</span><span class="ap-val" id="apUsers">—</span></div>
-  <div class="ap-row"><span class="ap-label">Current Shift</span><span class="ap-val" id="apShift">—</span></div>
-  <div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border)">
-    <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;color:var(--text);margin-bottom:12px">CHANGE SITE PASSWORD</h3>
-    <div class="ap-row" style="border:none"><span class="ap-label">New Password</span><input type="text" class="ap-input" id="apNewPw" placeholder="Enter new password..." autocomplete="off"></div>
-    <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="changePassword()">Update Password</button>
-    <div class="ap-msg" id="apPwMsg"></div>
-    <p style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5">Note: This changes the password for the current session. To make it permanent, also update the SITE_PASSWORD environment variable in Railway.</p>
+<div class="modal-bg" id="adminModal"><div class="modal" style="width:700px;max-height:85vh"><div class="mh"><h2>&#9881; Admin Panel</h2><button class="mx" onclick="closeAdmin()">&times;</button></div>
+<div class="adm-tabs" id="admTabs">
+  <div class="adm-tab active" onclick="admTab(0)">Overview</div>
+  <div class="adm-tab" onclick="admTab(1)">Shifts</div>
+  <div class="adm-tab" onclick="admTab(2)">Fleet</div>
+  <div class="adm-tab" onclick="admTab(3)">Alerts</div>
+  <div class="adm-tab" onclick="admTab(4)">Stats</div>
+  <div class="adm-tab" onclick="admTab(5)">Log</div>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div class="adm-page active admin-panel" id="admP0">
+  <div class="stat-cards">
+    <div class="stat-card"><div class="sc-num" id="apUsers">—</div><div class="sc-lbl">Users Online</div></div>
+    <div class="stat-card"><div class="sc-num" id="apShifts">—</div><div class="sc-lbl">Total Shifts</div></div>
+    <div class="stat-card"><div class="sc-num" id="apUnits">—</div><div class="sc-lbl">Units on Shed</div></div>
+    <div class="stat-card"><div class="sc-num" id="apAwaiting">—</div><div class="sc-lbl">Awaiting</div></div>
   </div>
-  <div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border)">
-    <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;color:var(--text);margin-bottom:8px">ADMIN INFO</h3>
-    <p style="font-size:12px;color:var(--muted);line-height:1.6">Admin password is set via the ADMIN_PASSWORD environment variable in Railway. Regular users log in with the site password. Admin users can access this panel and manage settings.</p>
+  <div class="adm-section">
+    <h3>Current Shift</h3>
+    <div class="ap-row"><span class="ap-label">Shift</span><span class="ap-val" id="apShift">—</span></div>
+  </div>
+  <div class="adm-section">
+    <h3>Password Management</h3>
+    <div class="ap-row" style="border:none"><span class="ap-label">New Password</span><input type="text" class="ap-input" id="apNewPw" placeholder="Enter new password..." autocomplete="off"></div>
+    <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="changePassword()">Update Site Password</button>
+    <div class="ap-msg" id="apPwMsg"></div>
+    <p style="font-size:10px;color:var(--muted);margin-top:6px">Changes runtime password. Update SITE_PASSWORD env var in Railway to persist across restarts.</p>
+  </div>
+  <div class="adm-section">
+    <h3>Quick Actions</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="adm-btn" onclick="admForceRefresh()">&#8635; Force Refresh All</button>
+      <button class="adm-btn" onclick="admLockShift(true)">&#128274; Lock Current Shift</button>
+      <button class="adm-btn" onclick="admLockShift(false)">&#128275; Unlock Current Shift</button>
+    </div>
   </div>
 </div>
+
+<!-- SHIFTS TAB -->
+<div class="adm-page" id="admP1">
+  <div class="adm-section">
+    <h3>Manage Shifts</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Delete old or test shifts. Export shift data for records.</p>
+    <div id="admShiftList" style="max-height:400px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- FLEET TAB -->
+<div class="adm-page" id="admP2">
+  <div class="adm-section">
+    <h3>Fleet Database</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Add, edit, or remove units from the fleet database.</p>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input type="text" class="fi mono" id="fleetAddUnit" placeholder="Unit number" style="width:100px">
+      <input type="text" class="fi" id="fleetAddClass" placeholder="Class e.g. 150/3" style="width:100px">
+      <input type="number" class="fi" id="fleetAddCars" placeholder="Cars" style="width:60px" min="1" max="12">
+      <input type="text" class="fi mono" id="fleetAddVehs" placeholder="Vehicles (comma sep)" style="flex:1">
+      <button class="adm-btn success" onclick="admAddFleet()">+ Add</button>
+    </div>
+    <div id="admFleetList" style="max-height:350px;overflow-y:auto"></div>
+    <div style="margin-top:8px;font-size:10px;color:var(--muted)" id="fleetCount"></div>
+  </div>
+</div>
+
+<!-- ALERTS TAB -->
+<div class="adm-page" id="admP3">
+  <div class="adm-section">
+    <h3>Push Announcement</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Send a banner message to all connected users. Leave blank to clear.</p>
+    <div class="fg"><label>Message</label><input type="text" class="fi" id="admAnnMsg" placeholder="e.g. Site evacuation — all personnel to muster point" autocomplete="off"></div>
+    <div class="fg"><label>Type</label><select class="fi" id="admAnnType"><option value="info">Info (blue)</option><option value="warning">Warning (amber)</option><option value="danger">Danger (red)</option></select></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-s" style="flex:1" onclick="admSendAnnounce()">Send Announcement</button>
+      <button class="adm-btn danger" onclick="admClearAnnounce()">Clear</button>
+    </div>
+  </div>
+  <div class="adm-section">
+    <h3>Shift Lock</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Lock the current shift to prevent any edits. Useful during handover.</p>
+    <div style="display:flex;gap:8px">
+      <button class="adm-btn danger" onclick="admLockShift(true)">&#128274; Lock Current Shift</button>
+      <button class="adm-btn success" onclick="admLockShift(false)">&#128275; Unlock Current Shift</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATS TAB -->
+<div class="adm-page" id="admP4">
+  <div class="adm-section">
+    <h3>Shift Statistics (Last 60 Shifts)</h3>
+    <div id="admStatsCards" class="stat-cards" style="margin-bottom:12px"></div>
+    <div id="admStatsTable" style="max-height:400px;overflow-y:auto"></div>
+    <button class="adm-btn" style="margin-top:10px" onclick="admExportCSV()">&#128190; Export as CSV</button>
+  </div>
+</div>
+
+<!-- LOG TAB -->
+<div class="adm-page" id="admP5">
+  <div class="adm-section">
+    <h3>Activity Log (Last 100 Actions)</h3>
+    <div id="admLogTable" style="max-height:450px;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div class="mf"><button class="btn btn-x" onclick="closeAdmin()">Close</button></div></div></div>
 
 <!-- ADD HANDOVER SECTION MODAL -->
@@ -534,7 +670,7 @@ function collectItems(d){
 
 // ═══ RENDER ═══
 async function render(){
-  const ed=actKey===curKey,isDay=kType(actKey)==='day';
+  const ed=(actKey===curKey)&&!(shiftLocked&&lockedKey===actKey),isDay=kType(actKey)==='day';
   const lbl=document.getElementById('shiftLabel');
   lbl.innerHTML=`${esc(kLabel(actKey))} <span class="type ${isDay?'day':'night'}">${isDay?'DAY':'NIGHT'}</span>`;
   if(!ed)lbl.innerHTML+=` <span class="ro">VIEW ONLY</span>`;
@@ -1498,7 +1634,7 @@ async function executeSwapover(){
 }
 
 // ═══ ADMIN & USER COUNT ═══
-let isAdminUser=false;
+let isAdminUser=false,shiftLocked=false,lockedKey='',admFleetData={};
 
 async function checkAdmin(){
   try{
@@ -1512,13 +1648,34 @@ async function checkAdmin(){
 socket.on('user-count',(msg)=>{
   document.getElementById('ucNum').textContent=msg.count;
 });
+socket.on('announcement',(msg)=>{
+  const bar=document.getElementById('announceBar');
+  const msgEl=document.getElementById('announceMsg');
+  if(!msg.message){bar.classList.remove('show','a-info','a-warning','a-danger');document.body.classList.remove('has-announce');return}
+  bar.className='announce-bar show a-'+msg.type;
+  msgEl.textContent=msg.message;
+  document.body.classList.add('has-announce');
+});
+socket.on('shift-lock',(msg)=>{
+  if(msg.key===actKey||msg.key===curKey){shiftLocked=msg.locked;lockedKey=msg.key;document.getElementById('lockBadge').classList.toggle('show',shiftLocked);if(shiftLocked)render()}
+});
+socket.on('force-refresh',()=>{location.reload()});
 
-function openAdmin(){
+function admTab(idx){document.querySelectorAll('.adm-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.querySelectorAll('.adm-page').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  if(idx===1)loadAdmShifts();if(idx===2)loadAdmFleet();if(idx===4)loadAdmStats();if(idx===5)loadAdmLog();}
+
+async function openAdmin(){
   if(!isAdminUser)return;
   document.getElementById('apUsers').textContent=document.getElementById('ucNum').textContent;
   document.getElementById('apShift').textContent=kLabel(curKey);
+  const items=collectItems(D);
+  document.getElementById('apUnits').textContent=items.length;
+  document.getElementById('apAwaiting').textContent=(D.awaiting||[]).length;
+  const keys=await allKeys();
+  document.getElementById('apShifts').textContent=keys.length;
   document.getElementById('apNewPw').value='';
   document.getElementById('apPwMsg').classList.remove('show');
+  admTab(0);
   document.getElementById('adminModal').classList.add('open');
 }
 function closeAdmin(){document.getElementById('adminModal').classList.remove('open')}
@@ -1528,14 +1685,159 @@ async function changePassword(){
   if(!pw||pw.length<3){alert('Password must be at least 3 characters');return}
   try{
     const r=await fetch('/api/admin/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newPassword:pw})});
-    const data=await r.json();
-    if(r.ok){
-      const msg=document.getElementById('apPwMsg');
-      msg.textContent='Password updated successfully. Update SITE_PASSWORD in Railway to persist.';
-      msg.classList.add('show');
-      document.getElementById('apNewPw').value='';
-    }else{alert(data.error||'Failed to change password')}
+    if(r.ok){const msg=document.getElementById('apPwMsg');msg.textContent='Password updated.';msg.classList.add('show');document.getElementById('apNewPw').value=''}
+    else{const d=await r.json();alert(d.error||'Failed')}
   }catch(e){alert('Error changing password')}
+}
+
+// Force refresh all
+async function admForceRefresh(){
+  if(!confirm('Force refresh all connected users?'))return;
+  await fetch('/api/admin/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+}
+
+// Lock/unlock shift
+async function admLockShift(lock){
+  await fetch('/api/admin/lock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:curKey,locked:lock})});
+  shiftLocked=lock;lockedKey=curKey;
+  document.getElementById('lockBadge').classList.toggle('show',lock);
+  if(lock)render();
+}
+
+// Announcements
+async function admSendAnnounce(){
+  const msg=document.getElementById('admAnnMsg').value.trim();
+  const type=document.getElementById('admAnnType').value;
+  if(!msg){alert('Enter a message');return}
+  await fetch('/api/admin/announce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,type})});
+}
+async function admClearAnnounce(){
+  await fetch('/api/admin/announce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'',type:'info'})});
+  document.getElementById('admAnnMsg').value='';
+}
+
+// Shifts management
+async function loadAdmShifts(){
+  const keys=await allKeys();
+  const el=document.getElementById('admShiftList');
+  if(!keys.length){el.innerHTML='<p style="color:var(--muted);font-size:12px">No shifts found</p>';return}
+  let h='';
+  keys.forEach(k=>{
+    const isCur=k===curKey;
+    h+=`<div class="adm-shift"><span class="as-label">${esc(kLabel(k))}${isCur?' <span style="color:var(--orange);font-size:10px">(CURRENT)</span>':''}</span>`;
+    h+=`<button class="adm-btn" onclick="admExportShift('${esc(k)}')">Export</button>`;
+    if(!isCur)h+=`<button class="adm-btn danger" onclick="admDeleteShift('${esc(k)}')">Delete</button>`;
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+}
+
+async function admDeleteShift(key){
+  if(!confirm('Delete shift: '+kLabel(key)+'? This cannot be undone.'))return;
+  await fetch('/api/admin/shifts/'+encodeURIComponent(key),{method:'DELETE'});
+  loadAdmShifts();
+}
+
+async function admExportShift(key){
+  const r=await apiGet('/api/admin/export/'+encodeURIComponent(key));
+  if(!r){alert('Shift not found');return}
+  const blob=new Blob([JSON.stringify(r,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='shift_'+key+'.json';a.click();URL.revokeObjectURL(url);
+}
+
+// Fleet management
+async function loadAdmFleet(){
+  try{const r=await apiGet('/api/admin/fleet');admFleetData=r||{}}catch(e){admFleetData={}}
+  renderAdmFleet();
+}
+
+function renderAdmFleet(){
+  const el=document.getElementById('admFleetList');
+  const units=Object.keys(admFleetData).sort();
+  document.getElementById('fleetCount').textContent=units.length+' units in database';
+  if(!units.length){el.innerHTML='<p style="color:var(--muted);font-size:12px">No fleet data</p>';return}
+  let h='<table class="log-tbl"><thead><tr><th>Unit</th><th>Class</th><th>Cars</th><th>Vehicles</th><th></th></tr></thead><tbody>';
+  units.forEach(u=>{
+    const f=admFleetData[u];
+    h+=`<tr><td style="font-family:'JetBrains Mono',monospace;font-weight:700">${esc(u)}</td><td>${esc(f.c||'')}</td><td style="text-align:center">${f.n||''}</td><td style="font-size:10px">${(f.v||[]).join(', ')}</td>`;
+    h+=`<td><button class="adm-btn danger" style="font-size:9px;padding:2px 6px" onclick="admDelFleet('${esc(u)}')">&#10005;</button></td></tr>`;
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+async function admAddFleet(){
+  const unit=document.getElementById('fleetAddUnit').value.trim();
+  const cls=document.getElementById('fleetAddClass').value.trim();
+  const cars=parseInt(document.getElementById('fleetAddCars').value)||1;
+  const vehs=document.getElementById('fleetAddVehs').value.trim().split(',').map(v=>v.trim()).filter(Boolean);
+  if(!unit){alert('Enter unit number');return}
+  if(!cls){alert('Enter class');return}
+  if(!vehs.length){alert('Enter vehicle numbers');return}
+  admFleetData[unit]={c:cls,n:cars,v:vehs};
+  await fetch('/api/admin/fleet',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(admFleetData)});
+  document.getElementById('fleetAddUnit').value='';document.getElementById('fleetAddClass').value='';
+  document.getElementById('fleetAddCars').value='';document.getElementById('fleetAddVehs').value='';
+  renderAdmFleet();
+  // Refresh fleet in memory
+  FLEET=admFleetData;
+}
+
+async function admDelFleet(unit){
+  if(!confirm('Remove '+unit+' from fleet?'))return;
+  delete admFleetData[unit];
+  await fetch('/api/admin/fleet',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(admFleetData)});
+  renderAdmFleet();
+  FLEET=admFleetData;
+}
+
+// Stats
+async function loadAdmStats(){
+  const stats=await apiGet('/api/admin/stats');
+  if(!stats||!stats.length){document.getElementById('admStatsTable').innerHTML='<p style="color:var(--muted)">No data</p>';return}
+  // Summary cards
+  const totalShifts=stats.length;
+  const avgUnits=(stats.reduce((a,s)=>a+s.totalUnits,0)/totalShifts).toFixed(1);
+  const avgStaff=(stats.reduce((a,s)=>a+s.staffCount,0)/totalShifts).toFixed(1);
+  const totalOverdue=stats.reduce((a,s)=>a+s.overdue,0);
+  document.getElementById('admStatsCards').innerHTML=`
+    <div class="stat-card"><div class="sc-num">${totalShifts}</div><div class="sc-lbl">Shifts</div></div>
+    <div class="stat-card"><div class="sc-num">${avgUnits}</div><div class="sc-lbl">Avg Units/Shift</div></div>
+    <div class="stat-card"><div class="sc-num">${avgStaff}</div><div class="sc-lbl">Avg Staff/Shift</div></div>
+    <div class="stat-card"><div class="sc-num">${totalOverdue}</div><div class="sc-lbl">Total Overdue</div></div>`;
+  // Table
+  let h='<table class="log-tbl"><thead><tr><th>Shift</th><th>Units</th><th>Complete</th><th>Stopped</th><th>Overdue</th><th>Avg Days</th><th>Awaiting</th><th>Staff</th></tr></thead><tbody>';
+  stats.forEach(s=>{
+    h+=`<tr><td style="font-size:10px">${esc(kLabel(s.key))}</td><td style="text-align:center;font-weight:700">${s.totalUnits}</td><td style="text-align:center;color:var(--green-t)">${s.complete}</td><td style="text-align:center;color:var(--red-t)">${s.stopped}</td><td style="text-align:center;color:var(--red)">${s.overdue}</td><td style="text-align:center">${s.avgDays}</td><td style="text-align:center">${s.awaitingCount}</td><td style="text-align:center">${s.staffCount}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  document.getElementById('admStatsTable').innerHTML=h;
+}
+
+function admExportCSV(){
+  const rows=document.querySelectorAll('#admStatsTable table tr');
+  if(!rows.length)return;
+  let csv='';
+  rows.forEach(r=>{const cells=[...r.querySelectorAll('th,td')].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"');csv+=cells.join(',')+'\n'});
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='shift_stats.csv';a.click();URL.revokeObjectURL(url);
+}
+
+// Activity log
+async function loadAdmLog(){
+  const log=await apiGet('/api/admin/log');
+  const el=document.getElementById('admLogTable');
+  if(!log||!log.length){el.innerHTML='<p style="color:var(--muted);font-size:12px">No activity yet</p>';return}
+  let h='<table class="log-tbl"><thead><tr><th>Time</th><th>Action</th><th>Detail</th><th>Shift</th><th>User</th></tr></thead><tbody>';
+  log.forEach(l=>{
+    const t=new Date(l.ts);
+    const ts=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    h+=`<tr><td class="log-time">${ts}</td><td class="log-action">${esc(l.action)}</td><td>${esc(l.detail||'—')}</td><td style="font-size:10px">${l.shift_key?esc(kLabel(l.shift_key)):'—'}</td><td>${esc(l.user_type)}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
 }
 
 // Auto-save reminder every 6 hours

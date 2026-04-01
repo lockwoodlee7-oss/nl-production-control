@@ -3,7 +3,6 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const path = require('path');
-
 const crypto = require('crypto');
 
 const app = express();
@@ -27,12 +26,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(require('cookie-parser')());
 
 function checkAuth(req, res, next) {
-  // Allow login page and login POST through
   if (req.path === '/login' || req.path === '/login.html') return next();
-  // Check auth cookie — admin or regular
   const token = req.cookies?.nlauth;
   if (token === hashPw(ADMIN_PASSWORD) || token === hashPw(SITE_PASSWORD)) return next();
-  // Not authed — serve login page
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -88,34 +84,7 @@ ${error ? `<div class="err">${error}</div>` : ''}
 app.use(checkAuth);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ═══ ADMIN ENDPOINTS ═══
-
-// Check if current user is admin
-app.get('/api/auth/me', (req, res) => {
-  res.json({ admin: isAdmin(req) });
-});
-
-// Get connected user count
-app.get('/api/admin/users', (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
-  const count = io.engine.clientsCount;
-  res.json({ count });
-});
-
-// Change site password (admin only)
-app.post('/api/admin/password', (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
-  const { newPassword } = req.body;
-  if (!newPassword || newPassword.length < 3) {
-    return res.status(400).json({ error: 'Password must be at least 3 characters' });
-  }
-  SITE_PASSWORD = newPassword;
-  // Note: this changes the runtime password. To persist across restarts,
-  // update the SITE_PASSWORD env var in Railway.
-  res.json({ ok: true, note: 'Password changed for this session. Update SITE_PASSWORD env var in Railway to persist.' });
-});
-
-// Init DB table
+// ═══ INIT DB ═══
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS shifts (
@@ -130,9 +99,211 @@ async function initDB() {
       data JSONB NOT NULL
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS activity_log (
+      id SERIAL PRIMARY KEY,
+      ts TIMESTAMPTZ DEFAULT NOW(),
+      action TEXT NOT NULL,
+      detail TEXT,
+      shift_key TEXT,
+      user_type TEXT DEFAULT 'user'
+    )
+  `);
 }
 
-// GET shift data
+// ═══ ACTIVITY LOG HELPER ═══
+async function logActivity(action, detail, shiftKey, userType) {
+  try {
+    await pool.query(
+      'INSERT INTO activity_log (action, detail, shift_key, user_type) VALUES ($1, $2, $3, $4)',
+      [action, detail || null, shiftKey || null, userType || 'user']
+    );
+  } catch (e) { console.error('Log error:', e.message); }
+}
+
+// ═══ AUTH ENDPOINTS ═══
+app.get('/api/auth/me', (req, res) => {
+  res.json({ admin: isAdmin(req) });
+});
+
+// ═══ ADMIN ENDPOINTS ═══
+
+// Get connected user count
+app.get('/api/admin/users', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  res.json({ count: io.engine.clientsCount });
+});
+
+// Change site password
+app.post('/api/admin/password', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 3) {
+    return res.status(400).json({ error: 'Password must be at least 3 characters' });
+  }
+  SITE_PASSWORD = newPassword;
+  logActivity('password-change', 'Site password changed', null, 'admin');
+  res.json({ ok: true });
+});
+
+// Delete a shift (admin only)
+app.delete('/api/admin/shifts/:key', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    await pool.query('DELETE FROM shifts WHERE key = $1', [req.params.key]);
+    logActivity('shift-delete', `Deleted shift: ${req.params.key}`, req.params.key, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get activity log (admin only)
+app.get('/api/admin/log', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const result = await pool.query(
+      'SELECT * FROM activity_log ORDER BY ts DESC LIMIT 100'
+    );
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Set announcement (admin only)
+app.post('/api/admin/announce', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { message, type } = req.body; // type: info, warning, danger
+  io.emit('announcement', { message: message || '', type: type || 'info' });
+  logActivity('announcement', message || '(cleared)', null, 'admin');
+  res.json({ ok: true });
+});
+
+// Lock/unlock a shift (admin only)
+app.post('/api/admin/lock', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { key, locked } = req.body;
+  io.emit('shift-lock', { key, locked: !!locked });
+  logActivity(locked ? 'shift-lock' : 'shift-unlock', `Shift: ${key}`, key, 'admin');
+  res.json({ ok: true });
+});
+
+// Force refresh all clients (admin only)
+app.post('/api/admin/refresh', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  io.emit('force-refresh');
+  logActivity('force-refresh', 'All clients refreshed', null, 'admin');
+  res.json({ ok: true });
+});
+
+// Get shift stats (admin only)
+app.get('/api/admin/stats', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const result = await pool.query('SELECT key, data, updated_at FROM shifts ORDER BY key DESC LIMIT 60');
+    const stats = [];
+    for (const row of result.rows) {
+      const d = row.data;
+      let totalUnits = 0, complete = 0, stopped = 0, overdue = 0, avgDays = 0, daysList = [];
+      // Count units in roads
+      if (d.roads) {
+        for (const bays of Object.values(d.roads)) {
+          for (const bay of Object.values(bays)) {
+            if (bay && bay.unit) {
+              totalUnits++;
+              if (bay.status === 'COMPLETE') complete++;
+              if (bay.status === 'STOPPED') stopped++;
+              if (bay.sched_release) {
+                const diff = (new Date() - new Date(bay.sched_release)) / 86400000;
+                if (diff > 1) overdue++;
+              }
+              if (bay.arrtime) {
+                const days = Math.max(0, Math.floor((new Date() - new Date(bay.arrtime)) / 86400000));
+                daysList.push(days);
+              }
+            }
+          }
+        }
+      }
+      // Count sub sheds
+      if (d.subSheds) {
+        for (const bays of Object.values(d.subSheds)) {
+          for (const bay of Object.values(bays)) {
+            if (bay && bay.unit) {
+              totalUnits++;
+              if (bay.status === 'COMPLETE') complete++;
+              if (bay.status === 'STOPPED') stopped++;
+            }
+          }
+        }
+      }
+      avgDays = daysList.length ? (daysList.reduce((a, b) => a + b, 0) / daysList.length).toFixed(1) : 0;
+      const awaitingCount = (d.awaiting || []).length;
+      const staffCount = (() => {
+        const sm = d.staffMatrix || {};
+        let c = 0;
+        ['lv4elec','lv4mech','gwl','vb','lv3','tri','caf'].forEach(k => {
+          if (sm[k]) c += sm[k].filter(v => v && v.trim()).length;
+        });
+        return c;
+      })();
+
+      stats.push({
+        key: row.key,
+        updated: row.updated_at,
+        totalUnits,
+        complete,
+        stopped,
+        overdue,
+        avgDays: parseFloat(avgDays),
+        awaitingCount,
+        staffCount
+      });
+    }
+    res.json(stats);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Export shift data as JSON (for PDF/Excel generation client-side)
+app.get('/api/admin/export/:key', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const result = await pool.query('SELECT data, updated_at FROM shifts WHERE key = $1', [req.params.key]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Shift not found' });
+    logActivity('export', `Exported shift: ${req.params.key}`, req.params.key, 'admin');
+    res.json({ key: req.params.key, data: result.rows[0].data, updated: result.rows[0].updated_at });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══ FLEET MANAGEMENT (admin only) ═══
+app.get('/api/admin/fleet', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const fleet = require('./public/fleet.json');
+    res.json(fleet);
+  } catch (e) {
+    res.json({});
+  }
+});
+
+app.put('/api/admin/fleet', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const fs = require('fs');
+    fs.writeFileSync(path.join(__dirname, 'public', 'fleet.json'), JSON.stringify(req.body, null, 2));
+    logActivity('fleet-update', 'Fleet database updated', null, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══ SHIFT ENDPOINTS ═══
 app.get('/api/shifts/:key', async (req, res) => {
   try {
     const result = await pool.query('SELECT data FROM shifts WHERE key = $1', [req.params.key]);
@@ -144,7 +315,6 @@ app.get('/api/shifts/:key', async (req, res) => {
   }
 });
 
-// PUT shift data
 app.put('/api/shifts/:key', async (req, res) => {
   try {
     await pool.query(`
@@ -152,6 +322,7 @@ app.put('/api/shifts/:key', async (req, res) => {
       ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW()
     `, [req.params.key, req.body]);
     io.emit('shift-updated', { key: req.params.key });
+    logActivity('shift-save', null, req.params.key, isAdmin(req) ? 'admin' : 'user');
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -159,7 +330,6 @@ app.put('/api/shifts/:key', async (req, res) => {
   }
 });
 
-// GET all shift keys
 app.get('/api/shifts', async (req, res) => {
   try {
     const result = await pool.query('SELECT key FROM shifts ORDER BY key DESC');
@@ -169,7 +339,7 @@ app.get('/api/shifts', async (req, res) => {
   }
 });
 
-// GET config (links, handover template)
+// ═══ CONFIG ENDPOINTS ═══
 app.get('/api/config/:key', async (req, res) => {
   try {
     const result = await pool.query('SELECT data FROM config WHERE key = $1', [req.params.key]);
@@ -180,7 +350,6 @@ app.get('/api/config/:key', async (req, res) => {
   }
 });
 
-// PUT config
 app.put('/api/config/:key', async (req, res) => {
   try {
     await pool.query(`
@@ -194,7 +363,7 @@ app.put('/api/config/:key', async (req, res) => {
   }
 });
 
-// SEARCH across all shifts
+// ═══ SEARCH ═══
 app.get('/api/search', async (req, res) => {
   try {
     const q = (req.query.q || '').toLowerCase();
@@ -203,7 +372,6 @@ app.get('/api/search', async (req, res) => {
     const hits = [];
     for (const row of result.rows) {
       const d = row.data;
-      // Search roads
       if (d.roads) {
         for (const [roadNum, bays] of Object.entries(d.roads)) {
           for (const [bayNum, bay] of Object.entries(bays)) {
@@ -215,7 +383,6 @@ app.get('/api/search', async (req, res) => {
           }
         }
       }
-      // Search sub sheds
       if (d.subSheds) {
         for (const [shedName, bays] of Object.entries(d.subSheds)) {
           for (const [bayNum, bay] of Object.entries(bays)) {
@@ -227,7 +394,6 @@ app.get('/api/search', async (req, res) => {
           }
         }
       }
-      // Search awaiting list
       if (d.awaiting) {
         for (const aw of d.awaiting) {
           const text = JSON.stringify(aw).toLowerCase();
@@ -236,7 +402,6 @@ app.get('/api/search', async (req, res) => {
           }
         }
       }
-      // Search handover notes
       if (d.handover) {
         for (const [label, val] of Object.entries(d.handover)) {
           if (val && val.toLowerCase().includes(q)) {
@@ -257,10 +422,9 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Socket.io — track connected users
+// ═══ SOCKET.IO ═══
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  // Broadcast updated user count to all clients
   io.emit('user-count', { count: io.engine.clientsCount });
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
