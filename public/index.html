@@ -376,6 +376,16 @@ body.has-announce.plan-mode main{padding-top:214px}
 .journey-loc{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
 .journey-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px}
 .journey-status{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px}
+/* Undo/Redo */
+.undo-redo{display:flex;gap:2px;margin-right:6px}
+.ur-btn{width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}.ur-btn:hover:not(:disabled){border-color:var(--orange);color:#fff}.ur-btn:disabled{opacity:.2;cursor:default}
+/* Staff team selector */
+.team-sel{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:10px}
+.team-sel label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;color:var(--text);text-transform:uppercase}
+.team-sel select{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text);outline:none;cursor:pointer;min-width:120px}.team-sel select:focus{border-color:var(--orange)}
+.team-sel .ts-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--orange);background:rgba(244,121,59,.08);color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}.ts-btn:hover{background:var(--orange);color:#fff}
+.sm-box-wrap{display:inline-flex;align-items:center;gap:0;position:relative}
+.sm-box-x{position:absolute;right:1px;top:1px;width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:8px;font-weight:900;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;line-height:1}.sm-box-wrap:hover .sm-box-x{opacity:1}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -391,6 +401,7 @@ body.has-announce.plan-mode main{padding-top:214px}
 <div class="topbar">
   <span class="logo">NL</span>
   <div><h1>PRODUCTION CONTROL</h1><div class="sub">NEVILLE HILL — REPAIR SHED OPERATIONS</div></div>
+  <div class="undo-redo"><button class="ur-btn" id="btnUndo" onclick="undo()" disabled title="Undo">&#8630;</button><button class="ur-btn" id="btnRedo" onclick="redo()" disabled title="Redo">&#8631;</button></div>
   <div class="tsp"></div>
   <button class="tb" id="btnPlan" onclick="togglePlanMode()">&#128736; Build Next Shift</button>
   <button class="tb swap-btn" id="btnSwap" onclick="openSwapConfirm()" style="display:none">&#9203; Shift Swapover</button>
@@ -627,6 +638,25 @@ const SVC_SLOTS=6;
 const LS_DARK='nlHub_darkMode';
 const REQUIRED_FIELDS=['fUnit','fExam','fWt','fTeam','fStaff','fPri','fStat','fArr','fSR','fCom'];
 
+const TEAM_ROSTERS={
+'A Team':{spm:'Dean Henshaw',lv6:'Matt Towler',lv5c1:'Tony Baran',lv5c2:'Jon Knowles',
+  lv4mech:['Dave Powles','Liam Hopton','Chad Ward','Leo Callaghan','Olly Hayes','Will Buttery'],
+  lv4elec:['Oscar Schofield','Richard Dixon','Sam Fletcher','Tom Close','Al Sanderson','Lewis Adams','Scott Shaw'],
+  gwl:['L Marsh','T Sugden'],vb:['Ian Walsh'],lv3:['Gavin Hughes','Mo Khalifa','Danny Hudson','Daz Woods'],tri:[],caf:[]},
+'B Team':{spm:'Neil Patrick',lv6:'Phil Jepson',lv5c1:'G Simpson',lv5c2:'James King-Adams',
+  lv4mech:['S Shocker','B Ruck','G Scurr','R Cummings','D Davis','T Blake','A Nicklin','J Dobson','J Storrie'],
+  lv4elec:['P Askin','T Barry','G Atkinson','M Wrigg','G Hollis','C Plunkett'],
+  gwl:['P McD','T Pinder'],vb:['P Daniels'],lv3:['R Coope','S Maloy','J Jones'],tri:[],caf:[]},
+'C Team':{spm:'Simon Tennant',lv6:'Nick Baxby',lv5c1:'James Ackroyd',lv5c2:'Jeremy James',
+  lv4mech:['G Rhodes','D Cawood','M Walton','W Farnell','C Auty','L McAuley','M Dickinson'],
+  lv4elec:['J Shepherd','O Walker','R Abbot','A Pattison','C Booth','O Farnell','K Bojni'],
+  gwl:[],vb:['J Ross'],lv3:['N Cummings','C Davidson','K Ely'],tri:[],caf:[]},
+'D Team':{spm:'Marv Hughes',lv6:'Mick Palfreyman',lv5c1:'Winston Nyoni',lv5c2:'Andy Coates',
+  lv4mech:['T Barrett','D Pattison','L Preston','S Bell','J Edmiston','S Whitworth','A Widdop','C Tham'],
+  lv4elec:['J Woods','J McKenna','M Eaglen','S Batty','B Swift','R Stubbs','J Fox'],
+  gwl:[],vb:['I Whapham'],lv3:['L Bennett','M Henshaw','L North','W Murrell'],tri:[],caf:[]}
+};
+
 let curKey='',actKey='',D={},aRef=null,saveTmr=null,nsMode='copy',dragSrc=null;
 let cachedLinks=null,cachedTpl=null,FLEET={};
 
@@ -653,13 +683,45 @@ function emptyD(){const roads={},ss={};ROADS.forEach(r=>{roads[r.num]={1:null,2:
 
 async function allKeys(){return await apiGet('/api/shifts')||[]}
 async function loadD(k){return await apiGet('/api/shifts/'+encodeURIComponent(k))||emptyD()}
+// ═══ UNDO / REDO ═══
+const undoStack=[],redoStack=[];
+const MAX_UNDO=50;
+
+function pushUndo(){
+  undoStack.push(JSON.stringify(D));
+  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  redoStack.length=0;
+  updateUndoButtons();
+}
+
+function updateUndoButtons(){
+  document.getElementById('btnUndo').disabled=undoStack.length===0;
+  document.getElementById('btnRedo').disabled=redoStack.length===0;
+}
+
+async function undo(){
+  if(!undoStack.length)return;
+  redoStack.push(JSON.stringify(D));
+  D=JSON.parse(undoStack.pop());
+  updateUndoButtons();
+  await saveD();await render();
+}
+
+async function redo(){
+  if(!redoStack.length)return;
+  undoStack.push(JSON.stringify(D));
+  D=JSON.parse(redoStack.pop());
+  updateUndoButtons();
+  await saveD();await render();
+}
+
 async function saveD(){
   const dot=document.getElementById('saveDot'),txt=document.getElementById('saveTxt');
   dot.classList.add('saving');txt.textContent='Saving...';
   try{await apiPut('/api/shifts/'+encodeURIComponent(actKey),D)}catch(e){console.error('Save failed:',e)}
   setTimeout(()=>{dot.classList.remove('saving');txt.textContent='Saved'},400);
 }
-function autoS(){clearTimeout(saveTmr);saveTmr=setTimeout(()=>saveD(),500)}
+function autoS(){pushUndo();clearTimeout(saveTmr);saveTmr=setTimeout(()=>saveD(),500)}
 
 async function getLinks(){if(cachedLinks)return cachedLinks;cachedLinks=await apiGet('/api/config/links')||[];return cachedLinks}
 async function saveLinks(l){cachedLinks=l;await apiPut('/api/config/links',l)}
@@ -826,21 +888,52 @@ async function render(){
   h+=`</div></div><div class="pb">`;
   h+=`<div class="staff-toggle" id="smToggle" onclick="toggleStaffMatrix()"><h3>Staff Matrix</h3><span class="st-arr">&#9660;</span></div>`;
   h+=`<div class="staff-body" id="smBody">`;
+  // Team selector
+  if(ed){
+    h+=`<div class="team-sel"><label>Load Team</label><select id="teamSelect"><option value="">— Select Team —</option>`;
+    Object.keys(TEAM_ROSTERS).forEach(t=>{h+=`<option value="${esc(t)}" ${sm.team===t?'selected':''}>${esc(t)}</option>`});
+    h+=`</select><button class="ts-btn" onclick="loadTeamRoster()">Auto-Fill</button></div>`;
+  }
+  // Datalists for autocomplete
+  const curTeam=TEAM_ROSTERS[sm.team]||{};
+  h+=`<datalist id="dl_spm"><option value="${esc(curTeam.spm||'')}">`;
+  Object.values(TEAM_ROSTERS).forEach(t=>{if(t.spm)h+=`<option value="${esc(t.spm)}">`});
+  h+=`</datalist>`;
+  h+=`<datalist id="dl_lv6">`;Object.values(TEAM_ROSTERS).forEach(t=>{if(t.lv6)h+=`<option value="${esc(t.lv6)}">`});h+=`</datalist>`;
+  h+=`<datalist id="dl_lv5c">`;Object.values(TEAM_ROSTERS).forEach(t=>{if(t.lv5c1)h+=`<option value="${esc(t.lv5c1)}">`;if(t.lv5c2)h+=`<option value="${esc(t.lv5c2)}">`});h+=`</datalist>`;
+  STAFF_BOXES.forEach(sb=>{
+    h+=`<datalist id="dl_${sb.key}">`;
+    Object.values(TEAM_ROSTERS).forEach(t=>{(t[sb.key]||[]).forEach(n=>{h+=`<option value="${esc(n)}">`})});
+    h+=`</datalist>`;
+  });
   // Key roles
-  const keyRoles=[{key:'team',label:'Team On Shift'},{key:'spm',label:'Shift Production Manager'},{key:'lv6',label:'Level 6'},{key:'lv5c1',label:'Level 5C (1)'},{key:'lv5c2',label:'Level 5C (2)'}];
+  const keyRoles=[{key:'team',label:'Team On Shift',dl:''},{key:'spm',label:'Shift Production Manager',dl:'dl_spm'},{key:'lv6',label:'Level 6',dl:'dl_lv6'},{key:'lv5c1',label:'Level 5C (1)',dl:'dl_lv5c'},{key:'lv5c2',label:'Level 5C (2)',dl:'dl_lv5c'}];
   keyRoles.forEach(r=>{
     h+=`<div class="sm-row"><span class="sm-label">${r.label}</span>`;
-    if(ed)h+=`<input class="sm-input" value="${esc(sm[r.key]||'')}" onchange="onStaff('${r.key}',this.value)" placeholder="Enter name...">`;
+    if(ed){
+      if(r.key==='team'){
+        h+=`<select class="sm-input" onchange="onStaff('team',this.value)" style="cursor:pointer"><option value="">—</option>`;
+        Object.keys(TEAM_ROSTERS).forEach(t=>{h+=`<option value="${esc(t)}" ${sm.team===t?'selected':''}>${esc(t)}</option>`});
+        h+=`</select>`;
+      } else {
+        h+=`<input class="sm-input" value="${esc(sm[r.key]||'')}" onchange="onStaff('${r.key}',this.value)" placeholder="Enter name..." list="${r.dl}">`;
+      }
+    }
     else h+=`<span style="font-size:13px;color:var(--text2)">${esc(sm[r.key]||'—')}</span>`;
     h+=`</div>`;
   });
   // Boxes
   STAFF_BOXES.forEach(sb=>{
     if(!sm[sb.key])sm[sb.key]=[];
-    h+=`<div class="sm-row"><span class="sm-label">${sb.label} (${sb.count})</span><div class="sm-boxes">`;
+    const filled=sm[sb.key].filter(v=>v&&v.trim()).length;
+    h+=`<div class="sm-row"><span class="sm-label">${sb.label} (${filled}/${sb.count})</span><div class="sm-boxes">`;
     for(let i=0;i<sb.count;i++){
       const val=sm[sb.key][i]||'';
-      if(ed)h+=`<input class="sm-box" value="${esc(val)}" onchange="onStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}">`;
+      if(ed){
+        h+=`<span class="sm-box-wrap"><input class="sm-box" value="${esc(val)}" onchange="onStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}" list="dl_${sb.key}">`;
+        if(val)h+=`<button class="sm-box-x" onclick="event.stopPropagation();clearStaffSlot('${sb.key}',${i})" title="Remove">&times;</button>`;
+        h+=`</span>`;
+      }
       else h+=`<span class="sm-box" style="pointer-events:none">${esc(val||'—')}</span>`;
     }
     h+=`</div></div>`;
@@ -1079,6 +1172,27 @@ function handleAwaitingDrop(awIdx,dst){
   setTimeout(()=>openBM(dst.type,dst.id,dst.bay),200);
 }
 
+function handleAwaitingDropToPlan(awIdx,dst){
+  const aw=D.awaiting[awIdx];
+  if(!aw)return;
+  const ds=dst.type==='road'?planD.roads:planD.subSheds;
+  if(ds[dst.id]?.[dst.bay]){alert('Bay is occupied in the next shift.');return}
+  const now=new Date().toISOString();
+  const newLoc=locLabel(dst.type,dst.id,dst.bay);
+  let bd;
+  if(aw._bayData){
+    bd=JSON.parse(JSON.stringify(aw._bayData));
+    if(!bd.journey)bd.journey=[];
+    bd.journey.push({location:'Awaiting → Next Shift',status:'Planned',timestamp:now,notes:'Placed into next shift at '+newLoc});
+  } else {
+    bd={unit:aw.unit,vehicle:'',leadVeh:'',exam:'',worktype:aw.reason||'',team:aw.owner||'',staffcount:'',priority:'P3',status:'10%',reason:'',arrtime:now,sched_release:'',est_release:'',comments:aw.notes||'From awaiting: '+(aw.update||aw.reason||''),thirdParty:false,isolated:false,trades:{},journey:[{location:'Awaiting → Next Shift',status:'Planned',timestamp:now,notes:'Placed into next shift at '+newLoc}]};
+  }
+  if(!ds[dst.id])ds[dst.id]={};
+  ds[dst.id][dst.bay]=bd;
+  D.awaiting.splice(awIdx,1);
+  autoPlanS();autoS();render();
+}
+
 function mvdSel(mode){
   mvdMode=mode;
   document.getElementById('mvdMove').classList.toggle('selected',mode==='move');
@@ -1308,6 +1422,32 @@ function restoreSections(){
 function toggleStaffMatrix(){document.getElementById('smToggle').classList.toggle('open');document.getElementById('smBody').classList.toggle('open')}
 function toggleTaskAssign(){document.getElementById('taToggle').classList.toggle('open');document.getElementById('taBody').classList.toggle('open')}
 function autoSNoRender(){clearTimeout(saveTmr);saveTmr=setTimeout(()=>saveD(),500)}
+
+function loadTeamRoster(){
+  const sel=document.getElementById('teamSelect');
+  const team=sel?sel.value:'';
+  if(!team||!TEAM_ROSTERS[team]){alert('Select a team first');return}
+  const r=TEAM_ROSTERS[team];
+  if(!D.staffMatrix)D.staffMatrix={};
+  D.staffMatrix.team=team;
+  D.staffMatrix.spm=r.spm||'';
+  D.staffMatrix.lv6=r.lv6||'';
+  D.staffMatrix.lv5c1=r.lv5c1||'';
+  D.staffMatrix.lv5c2=r.lv5c2||'';
+  ['lv4elec','lv4mech','gwl','vb','lv3','tri','caf'].forEach(k=>{
+    D.staffMatrix[k]=[];
+    const roster=r[k]||[];
+    for(let i=0;i<roster.length;i++)D.staffMatrix[k][i]=roster[i];
+  });
+  autoS();render();
+}
+
+function clearStaffSlot(key,idx){
+  if(!D.staffMatrix||!D.staffMatrix[key])return;
+  D.staffMatrix[key][idx]='';
+  autoS();render();
+}
+
 function onStaff(key,val){if(!D.staffMatrix)D.staffMatrix={};D.staffMatrix[key]=val;autoSNoRender()}
 function onStaffBox(key,idx,val){if(!D.staffMatrix)D.staffMatrix={};if(!D.staffMatrix[key])D.staffMatrix[key]=[];D.staffMatrix[key][idx]=val;autoSNoRender()}
 function onTaskAssign(idx,field,val){if(!D.taskAssign)D.taskAssign=[];if(!D.taskAssign[idx])D.taskAssign[idx]={};D.taskAssign[idx][field]=val;autoSNoRender()}
@@ -1742,6 +1882,12 @@ function setupPlanDD(){
     el.addEventListener('drop',e=>{
       e.preventDefault();el.classList.remove('drag-over');
       if(!dragSrc)return;
+      // Awaiting → plan side drop
+      if(dragSrc.fromAwaiting){
+        const dst={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay};
+        handleAwaitingDropToPlan(dragSrc.awIdx,dst);
+        dragSrc=null;return;
+      }
       const dst={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay,plan:true};
       handleCrossDrop(dragSrc,dst);
     });
