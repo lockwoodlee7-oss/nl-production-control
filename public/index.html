@@ -267,6 +267,29 @@ body.dark .plan-side{background:var(--card)}
 .plan-side-notes textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:'Barlow',sans-serif;font-size:12px;color:var(--text);resize:vertical;min-height:40px;outline:none}
 .plan-side-notes textarea:focus{border-color:var(--orange)}
 .tb.plan-active{background:var(--orange)!important;color:#fff!important;border-color:var(--orange)!important}
+.tb.swap-btn{background:#059669;border-color:#059669;color:#fff;animation:swapPulse 2s infinite}.tb.swap-btn:hover{opacity:.85;background:#047857}
+@keyframes swapPulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,.4)}50%{box-shadow:0 0 12px 4px rgba(5,150,105,.25)}}
+/* Next Shift Builder — expanded side panel */
+.plan-side{width:460px}
+.plan-side .builder-section{padding:12px 14px;border-top:1px solid var(--border)}
+.plan-side .builder-section h4{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.plan-side .builder-section h4 .copy-btn{padding:3px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .15s}.copy-btn:hover{border-color:var(--orange);color:var(--orange)}
+.plan-side .bs-sm-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.plan-side .bs-sm-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--text);min-width:90px;text-transform:uppercase}
+.plan-side .bs-sm-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;color:var(--text);outline:none;font-family:'Barlow',sans-serif}.bs-sm-input:focus{border-color:var(--orange)}
+.plan-side .bs-sm-boxes{display:flex;gap:3px;flex-wrap:wrap;flex:1}
+.plan-side .bs-sm-box{width:56px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:10px;color:var(--text);outline:none;font-family:'Barlow',sans-serif;text-align:center}.bs-sm-box:focus{border-color:var(--orange)}
+.plan-side .bs-ta-row{display:flex;gap:5px;align-items:center;margin-bottom:4px}
+.plan-side .bs-ta-person{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;color:var(--text);outline:none}.bs-ta-person:focus{border-color:var(--orange)}
+.plan-side .bs-ta-task{flex:2;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;color:var(--text);outline:none}.bs-ta-task:focus{border-color:var(--orange)}
+.plan-side .bs-ta-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px}.bs-ta-del:hover{color:var(--red)}
+.plan-side .bs-add-btn{width:100%;padding:6px;border-radius:6px;border:1px dashed var(--border);background:none;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;margin-top:4px}.bs-add-btn:hover{border-color:var(--orange);color:var(--orange)}
+/* Swapover confirmation modal */
+.swap-confirm{text-align:center;padding:20px}
+.swap-confirm .swap-icon{font-size:48px;margin-bottom:12px}
+.swap-confirm .swap-from,.swap-confirm .swap-to{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--text);letter-spacing:1px}
+.swap-confirm .swap-arrow{font-size:24px;color:var(--orange);margin:8px 0}
+.swap-confirm .swap-info{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -283,7 +306,8 @@ body.dark .plan-side{background:var(--card)}
   <span class="logo">NL</span>
   <div><h1>PRODUCTION CONTROL</h1><div class="sub">NEVILLE HILL — REPAIR SHED OPERATIONS</div></div>
   <div class="tsp"></div>
-  <button class="tb" id="btnPlan" onclick="togglePlanMode()">&#128197; Planning</button>
+  <button class="tb" id="btnPlan" onclick="togglePlanMode()">&#128736; Build Next Shift</button>
+  <button class="tb swap-btn" id="btnSwap" onclick="openSwapConfirm()" style="display:none">&#9203; Shift Swapover</button>
   <button class="tb" onclick="openArchive()">&#128193; Archive</button>
   <button class="tb" id="btnDark" onclick="toggleDark()">&#9790; Dark</button>
   <span class="clock" id="clock"></span>
@@ -364,6 +388,19 @@ body.dark .plan-side{background:var(--card)}
 <div class="modal-bg" id="linkModal"><div class="modal" style="width:400px"><div class="mh"><h2>Add Link / Reference</h2><button class="mx" onclick="closeLM()">&times;</button></div>
 <div class="mbody"><div class="fg"><label>Display Name</label><input type="text" class="fi" id="lName" placeholder="e.g. QMSP Policy QMS-042" autocomplete="off"></div><div class="fg"><label>Value / Number (optional)</label><input type="text" class="fi" id="lVal" placeholder="e.g. 0113 123 4567" autocomplete="off"></div><div class="fg"><label>URL Link (optional)</label><input type="url" class="fi" id="lUrl" placeholder="https://..." autocomplete="off"></div>
 </div><div class="mf"><button class="btn btn-x" onclick="closeLM()">Cancel</button><button class="btn btn-s" onclick="saveLink()">Add</button></div></div></div>
+
+<!-- SHIFT SWAPOVER CONFIRMATION MODAL -->
+<div class="modal-bg" id="swapModal"><div class="modal" style="width:420px"><div class="mh"><h2>&#9203; Shift Swapover</h2><button class="mx" onclick="closeSwap()">&times;</button></div>
+<div class="mbody">
+  <div class="swap-confirm">
+    <div class="swap-icon">&#128260;</div>
+    <div class="swap-from" id="swapFrom"></div>
+    <div class="swap-arrow">&#9660;</div>
+    <div class="swap-to" id="swapTo"></div>
+    <div class="swap-info">The next shift will become the live shift.<br>You can then start building the following shift.</div>
+  </div>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeSwap()">Cancel</button><button class="btn btn-s" style="background:#059669" onclick="executeSwapover()">Confirm Swapover</button></div></div></div>
 
 <!-- ADD HANDOVER SECTION MODAL -->
 <div class="modal-bg" id="hoModal"><div class="modal" style="width:380px"><div class="mh"><h2>Add Handover Section</h2><button class="mx" onclick="closeHM()">&times;</button></div>
@@ -636,7 +673,7 @@ async function render(){
 }
 
 function renderBay(type,id,bay,d,ed,spec,span,isPlan){
-  const sc=d?bayClass(d.status):'',drag=ed&&d?'draggable="true"':'',click=ed?`onclick="openBM('${type}',${typeof id==='string'?"'"+id+"'":id},${bay}${isPlan?',true':''})"`:'';
+  const sc=d?bayClass(d.status):'',drag=ed&&d?'draggable="true"':'',click=d?`onclick="openBM('${type}',${typeof id==='string'?"'"+id+"'":id},${bay}${isPlan?',true':''})"`:(ed?`onclick="openBM('${type}',${typeof id==='string'?"'"+id+"'":id},${bay}${isPlan?',true':''})"`:'')
   const rag=d?getRag(d):'',days=d?getDays(d):0;
   const ragCls=rag==='g'?'rag-green':rag==='r'?'rag-red':rag==='a'?'rag-amber':'';
   const spanCls=span>1?`span-${span}`:'';
@@ -688,8 +725,8 @@ function renderQueue(items,tab,ed){
   if(!filtered.length)h+=`<tr><td colspan="${ed?17:16}" style="text-align:center;padding:24px;color:var(--muted)">No items</td></tr>`;
   filtered.forEach((it,idx)=>{const rag=getRag(it),days=getDays(it),dc=rag==='r'?'days-over':rag==='a'?'days-warn':'days-ok';
     const fleet=getFleet(it.unit);
-    const click=ed?`onclick="openBM('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})"`:'';
-    h+=`<tr ${click}><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">${it.leadVeh||(fleet?fleet.v[0]:'')}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
+    const click=`onclick="openBM('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})"`;
+    h+=`<tr ${click} style="cursor:pointer"><td style="font-weight:700;color:var(--muted)">${idx+1}</td><td><span class="rag-dot rag-${rag}"></span></td><td class="uc">${esc(it.unit)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">${it.leadVeh||(fleet?fleet.v[0]:'')}</td><td>${fleet?'Class '+fleet.c:esc(it.vehicle)}</td><td style="text-align:center;font-weight:700">${fleet?fleet.n:''}</td><td>${it.tp==='road'?'Rd':''}${it.id} B${it.bay}</td><td>${esc(it.worktype)}</td><td>${esc(it.exam)}</td><td>${esc(it.team)}</td><td><span class="pp pp-${(it.priority||'').replace('P','')}">${esc(it.priority)}</span></td><td><span class="sp ${spClass(it.status)}">${esc(it.status)}</span></td><td class="days-cell ${dc}">${days}d</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmtDT(it.sched_release)}</td>`;
     let flags='';if(it.thirdParty)flags+=`<span class="flag flag-3rd" style="font-size:9px">3RD PARTY</span> `;if(it.isolated)flags+=`<span class="flag flag-iso" style="font-size:9px">ISOLATED</span>`;h+=`<td>${flags}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(it.comments)}">${esc(it.comments)}</td>`;
     if(ed&&it.status!=='COMPLETE')h+=`<td><button class="rfs-btn" onclick="event.stopPropagation();markRFS('${it.tp}',${typeof it.id==='string'?"'"+it.id+"'":it.id},${it.bay})">&#10004; Ready</button></td>`;else if(ed)h+=`<td></td>`;h+=`</tr>`});
   return h+`</tbody></table>`;
@@ -771,7 +808,10 @@ function openBM(type,id,bay,isPlan){
       }
     }
   }
-  aRef={type,id,bay,isPlan:!!isPlan};const d=type==='road'?targetD.roads?.[id]?.[bay]:targetD.subSheds?.[id]?.[bay];document.getElementById('bmT').textContent=d?'Edit Bay':'Place Unit';document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
+  const isEditable=isPlan||(actKey===curKey);
+  aRef={type,id,bay,isPlan:!!isPlan};const d=type==='road'?targetD.roads?.[id]?.[bay]:targetD.subSheds?.[id]?.[bay];
+  document.getElementById('bmT').textContent=isEditable?(d?'Edit Bay':'Place Unit'):'View Bay (Read Only)';
+  document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
   const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fWt:'worktype',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
   document.getElementById('f3rd').checked=!!d?.thirdParty;document.getElementById('fIso').checked=!!d?.isolated;
   // Leading vehicle — populate dropdown then set saved value
@@ -790,13 +830,18 @@ function openBM(type,id,bay,isPlan){
   document.getElementById('trTP').value=(trades.tp||{}).req||'0';
   document.getElementById('trTPDone').checked=!!(trades.tp||{}).done;
 
-  document.getElementById('btnCB').style.display=d?'':'none';
+  // Read-only mode for past shifts
+  const allInputs=document.querySelectorAll('#bayModal .fi, #bayModal .trade-done, #bayModal input[type="checkbox"]');
+  allInputs.forEach(el=>{if(!isEditable){el.disabled=true;el.style.opacity='.7'}else{el.disabled=false;el.style.opacity='1'}});
+  document.getElementById('btnCB').style.display=isEditable&&d?'':'none';
+  const saveBtn=document.querySelector('#bayModal .btn-s');
+  if(saveBtn){saveBtn.style.display=isEditable?'':'none'}
   document.getElementById('valMsg').classList.remove('show');
   // Clear invalid styling
   REQUIRED_FIELDS.forEach(id=>{document.getElementById(id).classList.remove('invalid')});
   document.getElementById('bayModal').classList.add('open');
   onUnitInput();
-  setTimeout(()=>document.getElementById('fUnit').focus(),100);
+  if(isEditable)setTimeout(()=>document.getElementById('fUnit').focus(),100);
 }
 function closeBM(){document.getElementById('bayModal').classList.remove('open');aRef=null}
 function saveBay(){
@@ -1062,6 +1107,7 @@ function togglePlanMode(){
   planMode=!planMode;
   document.body.classList.toggle('plan-mode',planMode);
   document.getElementById('btnPlan').classList.toggle('plan-active',planMode);
+  document.getElementById('btnSwap').style.display=planMode?'':'none';
   if(planMode){
     // Default plan shift = next shift from current
     planKey=getAdjacentKey(actKey,1);
@@ -1163,9 +1209,14 @@ async function tlClickShift(key){
 
 function renderPlanSide(){
   if(!planMode)return'';
-  const ed=true; // plan side is always editable (you're setting up the future)
+  const ed=true;
   const pType=kType(planKey);
   const isDay=pType==='day';
+  if(!planD.staffMatrix)planD.staffMatrix={};
+  if(!planD.taskAssign)planD.taskAssign=[];
+  if(!planD.handover)planD.handover={};
+  const psm=planD.staffMatrix;
+
   let h=`<div class="plan-side" id="planSide">`;
   h+=`<div class="plan-side-hdr"><h3>${isDay?'DAY':'NIGHT'} — ${esc(kLabel(planKey))}</h3></div>`;
   h+=`<div class="plan-side-body">`;
@@ -1193,19 +1244,57 @@ function renderPlanSide(){
   h+=`<div class="sub-sheds">`;
   SUBS.forEach(s=>{
     h+=`<div class="sub-shed"><div class="sub-shed-label">${s}</div><div class="road-bays">`;
-    for(let b=1;b<=4;b++){
-      h+=renderBay('sub',s,b,planD.subSheds?.[s]?.[b],ed,null,1,true);
-    }
+    for(let b=1;b<=4;b++) h+=renderBay('sub',s,b,planD.subSheds?.[s]?.[b],ed,null,1,true);
     h+=`</div></div>`;
   });
   h+=`</div>`;
   h+=`</div>`; // plan-side-body
 
-  // Quick handover notes for the plan shift
-  if(!planD.handover)planD.handover={};
-  h+=`<div class="plan-side-notes"><h4>Handover Notes</h4>`;
-  h+=`<textarea onchange="planD.handover['HANDOVER NOTES']=this.value;autoPlanS()" placeholder="Notes for this shift...">${esc(planD.handover['HANDOVER NOTES']||'')}</textarea>`;
+  // ── STAFF MATRIX for next shift ──
+  const keyRoles=[{key:'team',label:'Team'},{key:'spm',label:'SPM'},{key:'lv6',label:'LV6'},{key:'lv5c1',label:'LV5C(1)'},{key:'lv5c2',label:'LV5C(2)'}];
+  const STAFF_BOXES=[
+    {key:'lv4elec',label:'LV4 Elec',count:10},
+    {key:'lv4mech',label:'LV4 Mech',count:10},
+    {key:'gwl',label:'GWL',count:5},
+    {key:'vb',label:'VB',count:4},
+    {key:'lv3',label:'LV3',count:8},
+    {key:'tri',label:'TRI',count:8},
+    {key:'caf',label:'CAF',count:8}
+  ];
+
+  h+=`<div class="builder-section"><h4>Staff Matrix <button class="copy-btn" onclick="copyStaffToNext()">Copy from current</button></h4>`;
+  keyRoles.forEach(r=>{
+    h+=`<div class="bs-sm-row"><span class="bs-sm-label">${r.label}</span>`;
+    h+=`<input class="bs-sm-input" value="${esc(psm[r.key]||'')}" onchange="onPlanStaff('${r.key}',this.value)" placeholder="Name...">`;
+    h+=`</div>`;
+  });
+  STAFF_BOXES.forEach(sb=>{
+    if(!psm[sb.key])psm[sb.key]=[];
+    h+=`<div class="bs-sm-row"><span class="bs-sm-label">${sb.label}</span><div class="bs-sm-boxes">`;
+    for(let i=0;i<sb.count;i++){
+      h+=`<input class="bs-sm-box" value="${esc(psm[sb.key][i]||'')}" onchange="onPlanStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}">`;
+    }
+    h+=`</div></div>`;
+  });
   h+=`</div>`;
+
+  // ── TASK ASSIGNMENT for next shift ──
+  h+=`<div class="builder-section"><h4>Task Assignments <button class="copy-btn" onclick="copyTasksToNext()">Copy from current</button></h4>`;
+  planD.taskAssign.forEach((ta,i)=>{
+    h+=`<div class="bs-ta-row">`;
+    h+=`<input class="bs-ta-person" value="${esc(ta.person||'')}" onchange="onPlanTask(${i},'person',this.value)" placeholder="Name...">`;
+    h+=`<input class="bs-ta-task" value="${esc(ta.task||'')}" onchange="onPlanTask(${i},'task',this.value)" placeholder="Task...">`;
+    h+=`<button class="bs-ta-del" onclick="delPlanTask(${i})">&times;</button>`;
+    h+=`</div>`;
+  });
+  h+=`<button class="bs-add-btn" onclick="addPlanTask()">+ ASSIGN TASK</button>`;
+  h+=`</div>`;
+
+  // ── HANDOVER NOTES for next shift ──
+  h+=`<div class="builder-section"><h4>Handover Notes <button class="copy-btn" onclick="copyHandoverToNext()">Copy from current</button></h4>`;
+  h+=`<textarea style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:'Barlow',sans-serif;font-size:12px;color:var(--text);resize:vertical;min-height:50px;outline:none" onchange="planD.handover['HANDOVER NOTES']=this.value;autoPlanS()" placeholder="Notes for this shift...">${esc(planD.handover['HANDOVER NOTES']||'')}</textarea>`;
+  h+=`</div>`;
+
   h+=`</div>`;
   return h;
 }
@@ -1269,6 +1358,56 @@ function handleCrossDrop(src,dst){
   }
   dragSrc=null;
   render();
+}
+
+// ═══ NEXT SHIFT BUILDER — Staff & Task helpers ═══
+function onPlanStaff(key,val){if(!planD.staffMatrix)planD.staffMatrix={};planD.staffMatrix[key]=val;autoPlanS()}
+function onPlanStaffBox(key,idx,val){if(!planD.staffMatrix)planD.staffMatrix={};if(!planD.staffMatrix[key])planD.staffMatrix[key]=[];planD.staffMatrix[key][idx]=val;autoPlanS()}
+function onPlanTask(idx,field,val){if(!planD.taskAssign)planD.taskAssign=[];if(!planD.taskAssign[idx])planD.taskAssign[idx]={};planD.taskAssign[idx][field]=val;autoPlanS()}
+function addPlanTask(){if(!planD.taskAssign)planD.taskAssign=[];planD.taskAssign.push({person:'',task:''});autoPlanS();render()}
+function delPlanTask(idx){if(!planD.taskAssign)return;planD.taskAssign.splice(idx,1);autoPlanS();render()}
+
+// Copy from current shift to next shift
+function copyStaffToNext(){
+  if(!confirm('Copy staff matrix from current shift to next shift? This will overwrite the next shift staff.'))return;
+  planD.staffMatrix=JSON.parse(JSON.stringify(D.staffMatrix||{}));
+  autoPlanS();render();
+}
+function copyTasksToNext(){
+  if(!confirm('Copy task assignments from current shift? This will overwrite next shift tasks.'))return;
+  planD.taskAssign=JSON.parse(JSON.stringify(D.taskAssign||[]));
+  autoPlanS();render();
+}
+function copyHandoverToNext(){
+  if(!confirm('Copy handover notes from current shift?'))return;
+  planD.handover=JSON.parse(JSON.stringify(D.handover||{}));
+  autoPlanS();render();
+}
+
+// ═══ SHIFT SWAPOVER ═══
+function openSwapConfirm(){
+  if(!planMode||!planKey){alert('Open the shift builder first to set up the next shift.');return}
+  document.getElementById('swapFrom').textContent=kLabel(actKey);
+  document.getElementById('swapTo').textContent=kLabel(planKey);
+  document.getElementById('swapModal').classList.add('open');
+}
+function closeSwap(){document.getElementById('swapModal').classList.remove('open')}
+
+async function executeSwapover(){
+  closeSwap();
+  // Save the planned shift data
+  await apiPut('/api/shifts/'+encodeURIComponent(planKey),planD);
+  // Switch to the next shift as the live shift
+  const newKey=planKey;
+  actKey=newKey;
+  curKey=newKey;
+  D=planD;
+  // Set up to build the FOLLOWING shift
+  planKey=getAdjacentKey(newKey,1);
+  planD=await loadD(planKey);
+  if(!planD.roads)planD=emptyD();
+  renderTimeline();
+  await render();
 }
 
 // Auto-save reminder every 6 hours
