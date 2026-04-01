@@ -1395,7 +1395,34 @@ function closeSwap(){document.getElementById('swapModal').classList.remove('open
 
 async function executeSwapover(){
   closeSwap();
-  // Save the planned shift data
+  // Merge any changes from current shift into the planned next shift
+  // Units added/moved on current shift AFTER the next shift was built get carried over
+  const freshCurrent=await loadD(actKey);
+  if(freshCurrent&&freshCurrent.roads){
+    // Walk current shift — any occupied bay that is empty in planD gets copied across
+    // (unless unit is COMPLETE, those don't carry over)
+    ROADS.forEach(rc=>{
+      for(let b=1;b<=4;b++){
+        const cur=freshCurrent.roads?.[rc.num]?.[b];
+        const plan=planD.roads?.[rc.num]?.[b];
+        if(cur&&cur.unit&&cur.status!=='COMPLETE'&&!plan){
+          if(!planD.roads[rc.num])planD.roads[rc.num]={};
+          planD.roads[rc.num][b]=JSON.parse(JSON.stringify(cur));
+        }
+      }
+    });
+    SUBS.forEach(s=>{
+      for(let b=1;b<=4;b++){
+        const cur=freshCurrent.subSheds?.[s]?.[b];
+        const plan=planD.subSheds?.[s]?.[b];
+        if(cur&&cur.unit&&cur.status!=='COMPLETE'&&!plan){
+          if(!planD.subSheds[s])planD.subSheds[s]={};
+          planD.subSheds[s][b]=JSON.parse(JSON.stringify(cur));
+        }
+      }
+    });
+  }
+  // Save the planned shift data (now merged)
   await apiPut('/api/shifts/'+encodeURIComponent(planKey),planD);
   // Switch to the next shift as the live shift
   const newKey=planKey;
@@ -1412,6 +1439,37 @@ async function executeSwapover(){
 
 // Auto-save reminder every 6 hours
 setInterval(()=>{if(actKey===curKey)saveD()},6*60*60*1000);
+
+// ═══ AUTO SHIFT ROLLOVER ═══
+// Checks every 30 seconds if the shift has changed (e.g. DAY→NIGHT at 6pm)
+// If the user is viewing the current shift, auto-switch to the new one
+setInterval(async()=>{
+  const newCurKey=getCurKey();
+  if(newCurKey!==curKey){
+    const oldKey=curKey;
+    curKey=newCurKey;
+    // If user was viewing the old current shift, switch them to the new one
+    if(actKey===oldKey){
+      // Load the new shift — it may already have data if it was pre-built
+      actKey=curKey;
+      D=await loadD(actKey);
+      if(!D.roads)D=emptyD();
+      // If in plan mode, update the plan target to the next shift
+      if(planMode){
+        planKey=getAdjacentKey(actKey,1);
+        planD=await loadD(planKey);
+        if(!planD.roads)planD=emptyD();
+        renderTimeline();
+      }
+      await render();
+      // Auto-switch dark/light mode based on new shift
+      const h=new Date().getHours();
+      const isDark=document.body.classList.contains('dark');
+      if(h>=18||h<6){if(!isDark)toggleDark()}
+      else{if(isDark)toggleDark()}
+    }
+  }
+},30000);
 
 // DARK MODE
 function toggleDark(){document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');localStorage.setItem(LS_DARK,isDark?'1':'0');document.getElementById('btnDark').innerHTML=isDark?'&#9728; Light':'&#9790; Dark'}
