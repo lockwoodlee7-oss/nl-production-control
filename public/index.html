@@ -1048,17 +1048,27 @@ function handleAwaitingDrop(awIdx,dst){
   // Check if destination bay is occupied
   const ds=dst.type==='road'?D.roads:D.subSheds;
   if(ds[dst.id]?.[dst.bay]){alert('Bay is occupied. Clear it first or drop to an empty bay.');return}
-  // Create bay entry from awaiting data
   const now=new Date().toISOString();
-  const bd={
-    unit:aw.unit,vehicle:'',leadVeh:'',exam:'',
-    worktype:aw.reason||'',team:aw.owner||'',staffcount:'',
-    priority:'P3',status:'10%',reason:'',
-    arrtime:now,sched_release:'',est_release:'',
-    comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||''),
-    thirdParty:false,isolated:false,trades:{},
-    journey:[{location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed from awaiting attention list'}]
-  };
+  const newLoc=locLabel(dst.type,dst.id,dst.bay);
+  let bd;
+  if(aw._bayData){
+    // Restore full bay data — preserves exam, trades, all fields
+    bd=JSON.parse(JSON.stringify(aw._bayData));
+    // Add journey entry for the return
+    if(!bd.journey)bd.journey=[];
+    bd.journey.push({location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed back into '+newLoc});
+  } else {
+    // Fresh entry from awaiting data (no previous bay data)
+    bd={
+      unit:aw.unit,vehicle:'',leadVeh:'',exam:'',
+      worktype:aw.reason||'',team:aw.owner||'',staffcount:'',
+      priority:'P3',status:'10%',reason:'',
+      arrtime:now,sched_release:'',est_release:'',
+      comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||''),
+      thirdParty:false,isolated:false,trades:{},
+      journey:[{location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed from awaiting attention list into '+newLoc}]
+    };
+  }
   // Place in bay
   if(!ds[dst.id])ds[dst.id]={};
   ds[dst.id][dst.bay]=bd;
@@ -1245,6 +1255,10 @@ function sendToAwaiting(){
   // Create awaiting entry from bay data
   if(!D.awaiting)D.awaiting=[];
   const loc=locLabel(aRef.type,aRef.id,aRef.bay);
+  // Add journey entry before storing
+  if(!d.journey)d.journey=[];
+  d.journey.push({location:loc,status:d.status||'',timestamp:new Date().toISOString(),notes:'Sent back to awaiting attention'});
+  // Store full bay data so nothing is lost when it comes back
   D.awaiting.push({
     unit:d.unit,
     reason:d.worktype||'',
@@ -1254,12 +1268,9 @@ function sendToAwaiting(){
     pct:d.status==='COMPLETE'?'100':d.status?.replace('%','')||'0',
     reqComplete:d.reason||'',
     update:'Returned from '+loc+' — '+(d.comments||''),
-    notes:''
+    notes:'',
+    _bayData:JSON.parse(JSON.stringify(d))
   });
-  // Add journey entry if unit has history
-  if(d.journey&&d.journey.length){
-    d.journey.push({location:loc,status:d.status||'',timestamp:new Date().toISOString(),notes:'Sent back to awaiting attention'});
-  }
   // Clear the bay
   store[aRef.id][aRef.bay]=null;
   autoS();render();closeBM();
