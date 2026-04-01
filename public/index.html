@@ -352,6 +352,30 @@ body.has-announce.plan-mode main{padding-top:214px}
 /* Lock indicator */
 .lock-badge{padding:3px 8px;border-radius:5px;background:rgba(220,38,38,.15);color:var(--red);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1px;display:none}
 .lock-badge.show{display:inline-block}
+/* Draggable awaiting rows */
+.aw-drag{cursor:grab}.aw-drag:active{cursor:grabbing}
+.aw-drag.dragging{opacity:.3;background:rgba(244,121,59,.05)}
+/* Move vs Develop modal */
+.mvd-opts{display:flex;gap:12px;margin-top:12px}
+.mvd-opt{flex:1;padding:16px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-align:center}
+.mvd-opt:hover{border-color:var(--orange)}
+.mvd-opt.selected{border-color:var(--orange);background:rgba(244,121,59,.04)}
+.mvd-opt h4{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px}
+.mvd-opt p{font-size:11px;color:var(--muted);line-height:1.4}
+.mvd-opt .mvd-icon{font-size:28px;margin-bottom:6px}
+/* Unit journey history */
+.journey{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)}
+.journey h4{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.journey-item{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light);position:relative}
+.journey-item:last-child{border-bottom:none}
+.journey-item::before{content:'';position:absolute;left:5px;top:18px;bottom:-6px;width:2px;background:var(--border)}
+.journey-item:last-child::before{display:none}
+.journey-dot{width:12px;height:12px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:3px;z-index:1}
+.journey-dot.j-start{background:var(--blue)}.journey-dot.j-end{background:var(--green)}
+.journey-content{flex:1}
+.journey-loc{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+.journey-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px}
+.journey-status{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -423,6 +447,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   </div>
   <div class="fg"><label>Comments / Work Required *</label><textarea class="fi" id="fCom" rows="3" style="resize:vertical"></textarea></div>
   <div class="fr"><label class="chk"><input type="checkbox" id="f3rd"><span>&#9888; Third Party / Contractor</span></label><label class="chk"><input type="checkbox" id="fIso"><span>&#9889; Safety Isolation</span></label></div>
+  <div id="journeyHistory"></div>
 </div>
 <div class="mf"><button class="btn btn-d" id="btnCB" onclick="clearBay()">Clear Bay</button><div style="display:flex;gap:6px"><button class="btn btn-x" onclick="closeBM()">Cancel</button><button class="btn btn-s" onclick="saveBay()">Save</button></div></div></div></div>
 
@@ -575,6 +600,18 @@ body.has-announce.plan-mode main{padding-top:214px}
 </div>
 
 <div class="mf"><button class="btn btn-x" onclick="closeAdmin()">Close</button></div></div></div>
+
+<!-- MOVE VS DEVELOP MODAL -->
+<div class="modal-bg" id="mvdModal"><div class="modal" style="width:440px"><div class="mh"><h2>Move or Develop?</h2><button class="mx" onclick="closeMVD()">&times;</button></div>
+<div class="mbody">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Moving <strong id="mvdUnit"></strong></p>
+  <p style="font-size:11px;color:var(--muted)" id="mvdRoute"></p>
+  <div class="mvd-opts">
+    <div class="mvd-opt selected" id="mvdMove" onclick="mvdSel('move')"><div class="mvd-icon">&#8644;</div><h4>Move</h4><p>Relocate unit. Old location cleared. No history recorded.</p></div>
+    <div class="mvd-opt" id="mvdDev" onclick="mvdSel('develop')"><div class="mvd-icon">&#128203;</div><h4>Develop</h4><p>Relocate with audit trail. Records journey, status, and timestamps.</p></div>
+  </div>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeMVD()">Cancel</button><button class="btn btn-s" onclick="executeMVD()">Confirm</button></div></div></div>
 
 <!-- ADD HANDOVER SECTION MODAL -->
 <div class="modal-bg" id="hoModal"><div class="modal" style="width:380px"><div class="mh"><h2>Add Handover Section</h2><button class="mx" onclick="closeHM()">&times;</button></div>
@@ -745,7 +782,7 @@ async function render(){
     h+=`</tr></thead><tbody>`;
     D.awaiting.forEach((aw,i)=>{
       const pctCol=parseInt(aw.pct||0)>=100?'var(--green-t)':parseInt(aw.pct||0)>=50?'var(--amber-t)':'var(--text)';
-      h+=`<tr ${ed?`onclick="openAW(${i})" style="cursor:pointer"`:''}><td style="font-weight:700;color:var(--muted)">${i+1}</td>`;
+      h+=`<tr class="${ed?'aw-drag':''}" ${ed?`draggable="true" data-aw-idx="${i}" onclick="openAW(${i})" style="cursor:pointer"`:''}><td style="font-weight:700;color:var(--muted)">${i+1}</td>`;
       h+=`<td class="uc">${esc(aw.unit)}</td>`;
       h+=`<td>${esc(aw.reason)}</td>`;
       h+=`<td>${esc(aw.currentLoc)}</td>`;
@@ -945,8 +982,128 @@ function saveAW(){
 function delAW(idx){if(!confirm('Remove this unit from awaiting list?'))return;D.awaiting.splice(idx,1);autoS();render()}
 
 // DRAG & DROP
-function setupDD(){document.querySelectorAll('#mc .bay[draggable="true"]:not([data-plan])').forEach(el=>{el.addEventListener('dragstart',e=>{dragSrc={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay,plan:false};el.classList.add('dragging');e.dataTransfer.effectAllowed='move'});el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragSrc=null;document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'))})});
-document.querySelectorAll('#mc .bay:not([data-plan])').forEach(el=>{el.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';el.classList.add('drag-over')});el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drag-over');if(!dragSrc)return;const dst={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay,plan:false};if(planMode&&dragSrc.plan){handleCrossDrop(dragSrc,dst);return}if(dragSrc.type===dst.type&&String(dragSrc.id)===String(dst.id)&&dragSrc.bay===dst.bay)return;const ss=dragSrc.type==='road'?D.roads:D.subSheds,ds=dst.type==='road'?D.roads:D.subSheds;const sd=ss[dragSrc.id][dragSrc.bay],dd=ds[dst.id][dst.bay];ss[dragSrc.id][dragSrc.bay]=dd;ds[dst.id][dst.bay]=sd;dragSrc=null;autoS();render()})})}
+let pendingDrop=null,mvdMode='move';
+
+function locLabel(type,id,bay){return(type==='road'?'Road '+id:id)+' Bay '+bay}
+
+function setupDD(){
+  // Bay drag start
+  document.querySelectorAll('#mc .bay[draggable="true"]:not([data-plan])').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragSrc={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay,plan:false,fromAwaiting:false};el.classList.add('dragging');e.dataTransfer.effectAllowed='move'});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragSrc=null;document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'))});
+  });
+  // Awaiting row drag start
+  document.querySelectorAll('#mc tr.aw-drag[draggable="true"]').forEach(el=>{
+    el.addEventListener('dragstart',e=>{
+      const idx=parseInt(el.dataset.awIdx);
+      dragSrc={fromAwaiting:true,awIdx:idx,plan:false};
+      el.classList.add('dragging');e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragSrc=null;document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'))});
+  });
+  // Bay drop targets
+  document.querySelectorAll('#mc .bay:not([data-plan])').forEach(el=>{
+    el.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';el.classList.add('drag-over')});
+    el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();el.classList.remove('drag-over');if(!dragSrc)return;
+      const dst={type:el.dataset.type,id:el.dataset.id,bay:+el.dataset.bay,plan:false};
+
+      // Awaiting → Bay drop
+      if(dragSrc.fromAwaiting){
+        handleAwaitingDrop(dragSrc.awIdx,dst);
+        dragSrc=null;return;
+      }
+
+      // Cross-shift drop (planning mode)
+      if(planMode&&dragSrc.plan){handleCrossDrop(dragSrc,dst);return}
+
+      // Same bay = no-op
+      if(dragSrc.type===dst.type&&String(dragSrc.id)===String(dst.id)&&dragSrc.bay===dst.bay)return;
+
+      // Bay → Bay: check if source has a unit (to offer Move vs Develop)
+      const ss=dragSrc.type==='road'?D.roads:D.subSheds;
+      const sd=ss[dragSrc.id]?.[dragSrc.bay];
+      if(sd&&sd.unit){
+        // Show Move vs Develop modal
+        pendingDrop={src:dragSrc,dst,srcData:sd};
+        document.getElementById('mvdUnit').textContent=sd.unit;
+        document.getElementById('mvdRoute').textContent=locLabel(dragSrc.type,dragSrc.id,dragSrc.bay)+' → '+locLabel(dst.type,dst.id,dst.bay);
+        mvdSel('move');
+        document.getElementById('mvdModal').classList.add('open');
+      } else {
+        // Empty bay swap — just do it
+        const ds=dst.type==='road'?D.roads:D.subSheds;
+        const dd=ds[dst.id]?.[dst.bay]||null;
+        ss[dragSrc.id][dragSrc.bay]=dd;if(!ds[dst.id])ds[dst.id]={};ds[dst.id][dst.bay]=sd;
+        dragSrc=null;autoS();render();
+      }
+    });
+  });
+}
+
+function handleAwaitingDrop(awIdx,dst){
+  const aw=D.awaiting[awIdx];
+  if(!aw)return;
+  // Check if destination bay is occupied
+  const ds=dst.type==='road'?D.roads:D.subSheds;
+  if(ds[dst.id]?.[dst.bay]){alert('Bay is occupied. Clear it first or drop to an empty bay.');return}
+  // Create bay entry from awaiting data
+  const now=new Date().toISOString();
+  const bd={
+    unit:aw.unit,vehicle:'',leadVeh:'',exam:'',
+    worktype:aw.reason||'',team:aw.owner||'',staffcount:'',
+    priority:'P3',status:'10%',reason:'',
+    arrtime:now,sched_release:'',est_release:'',
+    comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||''),
+    thirdParty:false,isolated:false,trades:{},
+    journey:[{location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed from awaiting attention list'}]
+  };
+  // Place in bay
+  if(!ds[dst.id])ds[dst.id]={};
+  ds[dst.id][dst.bay]=bd;
+  // Remove from awaiting list
+  D.awaiting.splice(awIdx,1);
+  autoS();render();
+  // Open the bay modal so user can fill in details
+  setTimeout(()=>openBM(dst.type,dst.id,dst.bay),200);
+}
+
+function mvdSel(mode){
+  mvdMode=mode;
+  document.getElementById('mvdMove').classList.toggle('selected',mode==='move');
+  document.getElementById('mvdDev').classList.toggle('selected',mode==='develop');
+}
+function closeMVD(){document.getElementById('mvdModal').classList.remove('open');pendingDrop=null}
+
+function executeMVD(){
+  if(!pendingDrop)return;
+  const{src,dst,srcData}=pendingDrop;
+  const ss=src.type==='road'?D.roads:D.subSheds;
+  const ds=dst.type==='road'?D.roads:D.subSheds;
+  const dd=ds[dst.id]?.[dst.bay]||null;
+  const now=new Date().toISOString();
+
+  if(mvdMode==='develop'){
+    // Add journey entry recording the move
+    if(!srcData.journey)srcData.journey=[];
+    srcData.journey.push({
+      location:locLabel(src.type,src.id,src.bay),
+      status:srcData.status||'',
+      timestamp:now,
+      notes:'Developed to '+locLabel(dst.type,dst.id,dst.bay)
+    });
+  }
+
+  // Move the unit
+  ss[src.id][src.bay]=dd;
+  if(!ds[dst.id])ds[dst.id]={};
+  ds[dst.id][dst.bay]=srcData;
+
+  closeMVD();
+  dragSrc=null;
+  autoS();render();
+}
 
 // Unit input — auto-lookup fleet
 function onUnitInput(){
@@ -1014,6 +1171,28 @@ function openBM(type,id,bay,isPlan){
   document.getElementById('valMsg').classList.remove('show');
   // Clear invalid styling
   REQUIRED_FIELDS.forEach(id=>{document.getElementById(id).classList.remove('invalid')});
+  // Render journey history
+  const jEl=document.getElementById('journeyHistory');
+  if(d?.journey&&d.journey.length){
+    let jh=`<div class="journey"><h4>Unit Journey History (${d.journey.length} stops)</h4>`;
+    d.journey.forEach((j,idx)=>{
+      const isFirst=idx===0,isLast=idx===d.journey.length-1;
+      const dotCls=isFirst?'j-start':isLast?'j-end':'';
+      const ts=j.timestamp?fmtDT(j.timestamp):'';
+      const sCls=j.status==='COMPLETE'?'sp-g':j.status==='STOPPED'?'sp-r':'sp-a';
+      jh+=`<div class="journey-item"><div class="journey-dot ${dotCls}"></div><div class="journey-content">`;
+      jh+=`<div class="journey-loc">${esc(j.location)}</div>`;
+      jh+=`<div class="journey-meta">${ts}`;
+      if(j.status)jh+=` <span class="journey-status ${sCls}">${esc(j.status)}</span>`;
+      jh+=`</div>`;
+      if(j.notes)jh+=`<div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(j.notes)}</div>`;
+      jh+=`</div></div>`;
+    });
+    jh+=`</div>`;
+    jEl.innerHTML=jh;
+  } else {
+    jEl.innerHTML='';
+  }
   document.getElementById('bayModal').classList.add('open');
   onUnitInput();
   if(isEditable)setTimeout(()=>document.getElementById('fUnit').focus(),100);
@@ -1047,8 +1226,11 @@ function saveBay(){
     asst:{req:document.getElementById('trAsst').value,done:document.getElementById('trAsstDone').checked},
     tp:{req:document.getElementById('trTP').value,done:document.getElementById('trTPDone').checked}
   };
-  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades};
+  // Preserve existing journey history
   const targetD=aRef.isPlan?planD:D;
+  const existingBay=(type==='road'?targetD.roads:targetD.subSheds)[id]?.[bay];
+  const existingJourney=existingBay?.journey||[];
+  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades,journey:existingJourney};
   const store=type==='road'?targetD.roads:targetD.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM();
 }
 function clearBay(){if(!aRef||!confirm('Clear this bay?'))return;const targetD=aRef.isPlan?planD:D;(aRef.type==='road'?targetD.roads:targetD.subSheds)[aRef.id][aRef.bay]=null;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM()}
