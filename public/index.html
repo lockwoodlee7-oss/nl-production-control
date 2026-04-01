@@ -449,7 +449,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="fr"><label class="chk"><input type="checkbox" id="f3rd"><span>&#9888; Third Party / Contractor</span></label><label class="chk"><input type="checkbox" id="fIso"><span>&#9889; Safety Isolation</span></label></div>
   <div id="journeyHistory"></div>
 </div>
-<div class="mf"><button class="btn btn-d" id="btnCB" onclick="clearBay()">Clear Bay</button><div style="display:flex;gap:6px"><button class="btn btn-x" onclick="closeBM()">Cancel</button><button class="btn btn-s" onclick="saveBay()">Save</button></div></div></div></div>
+<div class="mf"><button class="btn btn-d" id="btnCB" onclick="clearBay()">Clear Bay</button><button class="btn" id="btnToAW" style="background:var(--blue);color:#fff;display:none" onclick="sendToAwaiting()">&#8592; Send to Awaiting</button><div style="display:flex;gap:6px"><button class="btn btn-x" onclick="closeBM()">Cancel</button><button class="btn btn-s" onclick="saveBay()">Save</button></div></div></div></div>
 
 <!-- NEW SHIFT MODAL -->
 <div class="modal-bg" id="nsModal"><div class="modal" style="width:400px"><div class="mh"><h2>Start New Shift</h2><button class="mx" onclick="closeNS()">&times;</button></div>
@@ -749,27 +749,7 @@ async function render(){
   SUBS.forEach(s=>{h+=`<div class="sub-shed"><div class="sub-shed-label">${s}</div><div class="road-bays">`;for(let b=1;b<=4;b++)h+=renderBay('sub',s,b,D.subSheds?.[s]?.[b],ed,null,1);h+=`</div></div>`});
   h+=`</div></div></div>`;
 
-  // RUNNING ORDER (collapsible)
-  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('runOrder')"><h2>Running Order</h2><span class="badge">${items.length} units</span><span class="st-arr" id="arr_runOrder">&#9660;</span></div><div class="coll-body" id="sec_runOrder"><div class="tabs" id="qTabs">`;['All','B Exam','UFC','GWL','Stopped / Overdue'].forEach((t,i)=>{h+=`<div class="tab ${i===0?'active':''}" onclick="switchTab(${i})">${t}</div>`});h+=`</div><div class="pb" style="padding:0;overflow-x:auto" id="qBody">${renderQueue(items,0,ed)}</div></div></div>`;
-
-  // SERVICE SHED PRIORITY MOVES (collapsible)
-  if(!D.serviceShed)D.serviceShed={};
-  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('svcShed')"><h2>Service Shed Priority Moves</h2><span class="st-arr" id="arr_svcShed">&#9660;</span></div><div class="coll-body" id="sec_svcShed"><div class="pb"><div class="svc-grid">`;
-  for(let i=1;i<=SVC_SLOTS;i++){
-    const s=D.serviceShed[i]||{};
-    h+=`<div class="svc-slot"><span class="svc-num">${i}</span>`;
-    if(ed){
-      h+=`<input type="text" placeholder="Unit number" value="${esc(s.unit||'')}" onchange="onSvc(${i},'unit',this.value)">`;
-      h+=`<textarea placeholder="Notes / details" onchange="onSvc(${i},'notes',this.value)">${esc(s.notes||'')}</textarea>`;
-    } else {
-      h+=`<input type="text" value="${esc(s.unit||'')}" readonly style="opacity:.7">`;
-      h+=`<textarea readonly style="opacity:.7">${esc(s.notes||'')}</textarea>`;
-    }
-    h+=`</div>`;
-  }
-  h+=`</div></div></div></div>`;
-
-  // AWAITING ATTENTION (collapsible)
+  // AWAITING ATTENTION (collapsible) — sits right below sub sheds for quick access
   if(!D.awaiting)D.awaiting=[];
   h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('awaiting')"><h2>Units On Site — Awaiting Attention</h2><span class="badge">${D.awaiting.length}</span>`;
   if(ed)h+=`<button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="event.stopPropagation();openAW(-1)">+ Add Unit</button>`;
@@ -798,6 +778,26 @@ async function render(){
     h+=`</tbody></table>`;
   }
   h+=`</div></div></div>`;
+
+  // RUNNING ORDER (collapsible)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('runOrder')"><h2>Running Order</h2><span class="badge">${items.length} units</span><span class="st-arr" id="arr_runOrder">&#9660;</span></div><div class="coll-body" id="sec_runOrder"><div class="tabs" id="qTabs">`;['All','B Exam','UFC','GWL','Stopped / Overdue'].forEach((t,i)=>{h+=`<div class="tab ${i===0?'active':''}" onclick="switchTab(${i})">${t}</div>`});h+=`</div><div class="pb" style="padding:0;overflow-x:auto" id="qBody">${renderQueue(items,0,ed)}</div></div></div>`;
+
+  // SERVICE SHED PRIORITY MOVES (collapsible)
+  if(!D.serviceShed)D.serviceShed={};
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('svcShed')"><h2>Service Shed Priority Moves</h2><span class="st-arr" id="arr_svcShed">&#9660;</span></div><div class="coll-body" id="sec_svcShed"><div class="pb"><div class="svc-grid">`;
+  for(let i=1;i<=SVC_SLOTS;i++){
+    const s=D.serviceShed[i]||{};
+    h+=`<div class="svc-slot"><span class="svc-num">${i}</span>`;
+    if(ed){
+      h+=`<input type="text" placeholder="Unit number" value="${esc(s.unit||'')}" onchange="onSvc(${i},'unit',this.value)">`;
+      h+=`<textarea placeholder="Notes / details" onchange="onSvc(${i},'notes',this.value)">${esc(s.notes||'')}</textarea>`;
+    } else {
+      h+=`<input type="text" value="${esc(s.unit||'')}" readonly style="opacity:.7">`;
+      h+=`<textarea readonly style="opacity:.7">${esc(s.notes||'')}</textarea>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`</div></div></div></div>`;
 
   // LINKS (collapsible)
   h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('links')"><h2>Useful Numbers & Links</h2><button class="btn btn-s" style="font-size:10px;padding:4px 12px" onclick="event.stopPropagation();openLM()">+ Add</button><span class="st-arr" id="arr_links">&#9660;</span></div><div class="coll-body" id="sec_links"><div class="pb">`;
@@ -1166,6 +1166,7 @@ function openBM(type,id,bay,isPlan){
   const allInputs=document.querySelectorAll('#bayModal .fi, #bayModal .trade-done, #bayModal input[type="checkbox"]');
   allInputs.forEach(el=>{if(!isEditable){el.disabled=true;el.style.opacity='.7'}else{el.disabled=false;el.style.opacity='1'}});
   document.getElementById('btnCB').style.display=isEditable&&d?'':'none';
+  document.getElementById('btnToAW').style.display=isEditable&&d&&!isPlan?'':'none';
   const saveBtn=document.querySelector('#bayModal .btn-s');
   if(saveBtn){saveBtn.style.display=isEditable?'':'none'}
   document.getElementById('valMsg').classList.remove('show');
@@ -1235,6 +1236,35 @@ function saveBay(){
 }
 function clearBay(){if(!aRef||!confirm('Clear this bay?'))return;const targetD=aRef.isPlan?planD:D;(aRef.type==='road'?targetD.roads:targetD.subSheds)[aRef.id][aRef.bay]=null;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM()}
 
+function sendToAwaiting(){
+  if(!aRef)return;
+  if(!confirm('Move this unit back to the Awaiting Attention list?'))return;
+  const store=aRef.type==='road'?D.roads:D.subSheds;
+  const d=store[aRef.id]?.[aRef.bay];
+  if(!d||!d.unit)return;
+  // Create awaiting entry from bay data
+  if(!D.awaiting)D.awaiting=[];
+  const loc=locLabel(aRef.type,aRef.id,aRef.bay);
+  D.awaiting.push({
+    unit:d.unit,
+    reason:d.worktype||'',
+    currentLoc:loc,
+    siteTo:'',
+    owner:d.team||'',
+    pct:d.status==='COMPLETE'?'100':d.status?.replace('%','')||'0',
+    reqComplete:d.reason||'',
+    update:'Returned from '+loc+' — '+(d.comments||''),
+    notes:''
+  });
+  // Add journey entry if unit has history
+  if(d.journey&&d.journey.length){
+    d.journey.push({location:loc,status:d.status||'',timestamp:new Date().toISOString(),notes:'Sent back to awaiting attention'});
+  }
+  // Clear the bay
+  store[aRef.id][aRef.bay]=null;
+  autoS();render();closeBM();
+}
+
 // HANDOVER
 function onHo(el){if(!D.handover)D.handover={};D.handover[el.dataset.sec]=el.value;autoS()}
 function openHM(){document.getElementById('hoModal').classList.add('open');document.getElementById('hoName').value='';setTimeout(()=>document.getElementById('hoName').focus(),100)}
@@ -1243,7 +1273,7 @@ async function addHoSec(){const name=document.getElementById('hoName').value.tri
 async function delHoSec(idx){const tpl=await getHoTpl();if(tpl[idx]?.def)return;if(!confirm('Remove section "'+tpl[idx].label+'"?'))return;tpl.splice(idx,1);await saveHoTpl(tpl);cachedTpl=tpl;await render()}
 
 // COLLAPSIBLE SECTIONS
-const openSections=new Set(['roadStatus','runOrder','svcShed','awaiting','links','handover']);
+const openSections=new Set();
 function toggleSection(id){
   const body=document.getElementById('sec_'+id);
   const arr=document.getElementById('arr_'+id);
