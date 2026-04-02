@@ -395,6 +395,13 @@ body.has-announce.plan-mode main{padding-top:214px}
 .bay .staff-tag{font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(124,58,237,.12);color:var(--purple);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.3px}
 /* Bay history indicator */
 .bay .bay-hist{position:absolute;top:5px;left:8px;font-size:8px;color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.5px}
+/* Service shed bays — narrower for 10-bay roads */
+.svc-road-bays .bay{min-height:70px;padding:6px 8px}
+.svc-road-bays .bay .unit{font-size:14px}
+.svc-road-bays .bay .class-info{font-size:9px}
+.svc-road-bays .bay .info{font-size:10px}
+.svc-road-bays .bay .bnum{font-size:8px}
+.svc-road-bays .bay .days-badge{font-size:9px}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -637,6 +644,8 @@ body.has-announce.plan-mode main{padding-top:214px}
 'use strict';
 const ROADS=[{num:1,elec:1,pit:1,jacks:0,spec:{}},{num:2,elec:1,pit:1,jacks:0,spec:{}},{num:3,elec:0,pit:1,jacks:0,spec:{3:'DROP TABLE',4:'JACKS'}},{num:4,elec:0,pit:1,jacks:0,spec:{3:'DT RECEIVE'}},{num:5,elec:0,pit:0,jacks:12,spec:{}}];
 const SUBS=['UFC','GWL'];
+const SVC_ROADS=['Service Shed 1','Service Shed 2','Service Shed 3','Service Shed 4'];
+const SVC_BAYS=10;
 const DEFAULT_HO=['PRIORITIES','CONTRACTORS ON SITE','STAFFING / RESOURCE','HANDOVER NOTES'];
 const SVC_SLOTS=6;
 const LS_DARK='nlHub_darkMode';
@@ -684,7 +693,7 @@ function mkKey(ds,t){return'nlHub_low_'+ds+'_'+t}
 function getCurKey(){const n=new Date(),t=sType(n);let ds=n.toISOString().slice(0,10);if(t==='NIGHT'&&n.getHours()<6){const p=new Date(n);p.setDate(p.getDate()-1);ds=p.toISOString().slice(0,10)}return mkKey(ds,t)}
 function kLabel(k){const m=k.match(/(\d{4}-\d{2}-\d{2})_(DAY|NIGHT)$/);if(!m)return k;const d=new Date(m[1]+'T12:00:00'),dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${dn[d.getDay()]} ${d.getDate()} ${mn[d.getMonth()]} ${d.getFullYear()} \u2014 ${m[2]==='DAY'?'Day':'Night'} Shift`}
 function kType(k){return k.endsWith('_NIGHT')?'night':'day'}
-function emptyD(){const roads={},ss={};ROADS.forEach(r=>{roads[r.num]={1:null,2:null,3:null,4:null}});SUBS.forEach(s=>{ss[s]={1:null,2:null,3:null,4:null}});return{roads,subSheds:ss,shiftNotes:'',roadStatus:{},handover:{},serviceShed:{},tables:{repair:[],service:[],fuel:[],awaiting:[]}}}
+function emptyD(){const roads={},ss={},svr={};ROADS.forEach(r=>{roads[r.num]={1:null,2:null,3:null,4:null}});SUBS.forEach(s=>{ss[s]={1:null,2:null,3:null,4:null}});SVC_ROADS.forEach(s=>{const b={};for(let i=1;i<=SVC_BAYS;i++)b[i]=null;svr[s]=b});return{roads,subSheds:ss,svcRoads:svr,shiftNotes:'',roadStatus:{},handover:{},serviceShed:{},tables:{repair:[],service:[],fuel:[],awaiting:[]}}}
 
 async function allKeys(){return await apiGet('/api/shifts')||[]}
 async function loadD(k){return await apiGet('/api/shifts/'+encodeURIComponent(k))||emptyD()}
@@ -746,6 +755,13 @@ async function saveHoTpl(t){cachedTpl=t;await apiPut('/api/config/hoTemplate',t)
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
+// Get the correct data store for a bay type
+function getStore(d,type){
+  if(type==='road')return d.roads;
+  if(type==='svc'){if(!d.svcRoads)d.svcRoads={};return d.svcRoads}
+  return d.subSheds;
+}
+
 // Fleet lookup
 function getFleet(unit){
   if(!unit)return null;
@@ -780,6 +796,7 @@ function collectItems(d){
     }
   });
   SUBS.forEach(s=>{for(let b=1;b<=4;b++){const bay=d.subSheds?.[s]?.[b];if(bay?.unit)items.push({...bay,tp:'sub',id:s,bay:b,span:1})}});
+  SVC_ROADS.forEach(s=>{for(let b=1;b<=SVC_BAYS;b++){const bay=d.svcRoads?.[s]?.[b];if(bay?.unit)items.push({...bay,tp:'svc',id:s,bay:b,span:1})}});
   return items;
 }
 
@@ -825,6 +842,20 @@ async function render(){
   });
   h+=`</div><div class="sub-sheds">`;
   SUBS.forEach(s=>{h+=`<div class="sub-shed"><div class="sub-shed-label">${s}</div><div class="road-bays">`;for(let b=1;b<=4;b++)h+=renderBay('sub',s,b,D.subSheds?.[s]?.[b],ed,null,1);h+=`</div></div>`});
+  h+=`</div></div></div>`;
+
+  // SERVICE SHED ROADS (4 roads, 10 bays each)
+  if(!D.svcRoads)D.svcRoads={};
+  const svcItems=[];SVC_ROADS.forEach(s=>{for(let b=1;b<=SVC_BAYS;b++){if(D.svcRoads?.[s]?.[b]?.unit)svcItems.push(1)}});
+  h+=`<div class="panel"><div class="ph"><h2>Service Shed</h2><span class="badge">${svcItems.length} units</span></div><div class="pb"><div class="shed-grid">`;
+  SVC_ROADS.forEach(sr=>{
+    if(!D.svcRoads[sr]){const b={};for(let i=1;i<=SVC_BAYS;i++)b[i]=null;D.svcRoads[sr]=b}
+    h+=`<div class="shed-road"><div class="road-label"><div class="road-name" style="font-size:13px">${sr}</div></div><div class="road-bays svc-road-bays">`;
+    for(let b=1;b<=SVC_BAYS;b++){
+      h+=renderBay('svc',sr,b,D.svcRoads[sr][b],ed,null,1);
+    }
+    h+=`</div></div>`;
+  });
   h+=`</div></div></div>`;
 
   // AWAITING ATTENTION (collapsible) — sits right below sub sheds for quick access
@@ -1091,7 +1122,7 @@ function renderQueue(items,tab,ed){
 
 function switchTab(idx){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.getElementById('qBody').innerHTML=renderQueue(collectItems(D),idx,actKey===curKey)}
 function toggleRS(num,field){if(!D.roadStatus)D.roadStatus={};if(!D.roadStatus[num])D.roadStatus[num]={};D.roadStatus[num][field]=!D.roadStatus[num][field];autoS();render()}
-function markRFS(type,id,bay){const store=type==='road'?D.roads:D.subSheds;if(store[id]?.[bay]){store[id][bay].status='COMPLETE';store[id][bay].readyForService=true;autoS();render()}}
+function markRFS(type,id,bay){const store=getStore(D,type);if(store[id]?.[bay]){store[id][bay].status='COMPLETE';store[id][bay].readyForService=true;autoS();render()}}
 
 // Service shed
 function onSvc(slot,field,val){if(!D.serviceShed)D.serviceShed={};if(!D.serviceShed[slot])D.serviceShed[slot]={};D.serviceShed[slot][field]=val;autoS()}
@@ -1171,7 +1202,7 @@ function setupDD(){
       if(dragSrc.type===dst.type&&String(dragSrc.id)===String(dst.id)&&dragSrc.bay===dst.bay)return;
 
       // Bay → Bay: check if source has a unit (to offer Move vs Develop)
-      const ss=dragSrc.type==='road'?D.roads:D.subSheds;
+      const ss=getStore(D,dragSrc.type);
       const sd=ss[dragSrc.id]?.[dragSrc.bay];
       if(sd&&sd.unit){
         // Show Move vs Develop modal
@@ -1182,7 +1213,7 @@ function setupDD(){
         document.getElementById('mvdModal').classList.add('open');
       } else {
         // Empty bay swap — just do it
-        const ds=dst.type==='road'?D.roads:D.subSheds;
+        const ds=getStore(D,dst.type);
         const dd=ds[dst.id]?.[dst.bay]||null;
         ss[dragSrc.id][dragSrc.bay]=dd;if(!ds[dst.id])ds[dst.id]={};ds[dst.id][dst.bay]=sd;
         dragSrc=null;autoS();render();
@@ -1195,7 +1226,7 @@ function handleAwaitingDrop(awIdx,dst){
   const aw=D.awaiting[awIdx];
   if(!aw)return;
   // Check if destination bay is occupied
-  const ds=dst.type==='road'?D.roads:D.subSheds;
+  const ds=getStore(D,dst.type);
   if(ds[dst.id]?.[dst.bay]){alert('Bay is occupied. Clear it first or drop to an empty bay.');return}
   const now=new Date().toISOString();
   const newLoc=locLabel(dst.type,dst.id,dst.bay);
@@ -1231,7 +1262,7 @@ function handleAwaitingDrop(awIdx,dst){
 function handleAwaitingDropToPlan(awIdx,dst){
   const aw=D.awaiting[awIdx];
   if(!aw)return;
-  const ds=dst.type==='road'?planD.roads:planD.subSheds;
+  const ds=getStore(planD,dst.type);
   if(ds[dst.id]?.[dst.bay]){alert('Bay is occupied in the next shift.');return}
   const now=new Date().toISOString();
   const newLoc=locLabel(dst.type,dst.id,dst.bay);
@@ -1259,8 +1290,8 @@ function closeMVD(){document.getElementById('mvdModal').classList.remove('open')
 function executeMVD(){
   if(!pendingDrop)return;
   const{src,dst,srcData}=pendingDrop;
-  const ss=src.type==='road'?D.roads:D.subSheds;
-  const ds=dst.type==='road'?D.roads:D.subSheds;
+  const ss=getStore(D,src.type);
+  const ds=getStore(D,dst.type);
   const dd=ds[dst.id]?.[dst.bay]||null;
   const now=new Date().toISOString();
 
@@ -1321,7 +1352,7 @@ function openBM(type,id,bay,isPlan){
     }
   }
   const isEditable=isPlan||(actKey===curKey);
-  aRef={type,id,bay,isPlan:!!isPlan};const d=type==='road'?targetD.roads?.[id]?.[bay]:targetD.subSheds?.[id]?.[bay];
+  aRef={type,id,bay,isPlan:!!isPlan};const d=getStore(targetD,type)?.[id]?.[bay];
   document.getElementById('bmT').textContent=isEditable?(d?'Edit Bay':'Place Unit'):'View Bay (Read Only)';
   document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
   const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
@@ -1420,16 +1451,16 @@ function saveBay(){
   };
   // Preserve existing journey history
   const targetD=aRef.isPlan?planD:D;
-  const existingBay=(type==='road'?targetD.roads:targetD.subSheds)[id]?.[bay];
+  const existingBay=getStore(targetD,type)[id]?.[bay];
   const existingJourney=existingBay?.journey||[];
   const selWts=[...document.querySelectorAll('#fWtChecks input:checked')].map(c=>c.value).join(', ');
   const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:selWts,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades,journey:existingJourney};
-  const store=type==='road'?targetD.roads:targetD.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM();
+  const store=getStore(targetD,type);if(!store[id])store[id]={};store[id][bay]=bd;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM();
 }
 function clearBay(){
   if(!aRef||!confirm('Clear this bay?'))return;
   const targetD=aRef.isPlan?planD:D;
-  const store=aRef.type==='road'?targetD.roads:targetD.subSheds;
+  const store=getStore(targetD,aRef.type);
   const old=store[aRef.id]?.[aRef.bay];
   // Record bay history — track that this unit was here
   if(old&&old.unit){
@@ -1445,7 +1476,7 @@ function clearBay(){
 function sendToAwaiting(){
   if(!aRef)return;
   if(!confirm('Move this unit back to the Awaiting Attention list?'))return;
-  const store=aRef.type==='road'?D.roads:D.subSheds;
+  const store=getStore(D,aRef.type);
   const d=store[aRef.id]?.[aRef.bay];
   if(!d||!d.unit)return;
   // Create awaiting entry from bay data
@@ -1893,6 +1924,17 @@ function renderPlanSide(){
     h+=`</div></div>`;
   });
   h+=`</div>`;
+
+  // Service shed roads in plan side
+  if(!planD.svcRoads)planD.svcRoads={};
+  h+=`<div style="padding:6px 10px;border-top:1px solid var(--border)"><div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--text2);margin-bottom:4px">SERVICE SHED</div>`;
+  SVC_ROADS.forEach(sr=>{
+    if(!planD.svcRoads[sr]){const b={};for(let i=1;i<=SVC_BAYS;i++)b[i]=null;planD.svcRoads[sr]=b}
+    h+=`<div style="margin-bottom:4px"><div style="font-size:9px;font-weight:700;color:var(--muted);margin-bottom:2px">${sr}</div><div class="road-bays" style="gap:2px">`;
+    for(let b=1;b<=SVC_BAYS;b++) h+=renderBay('svc',sr,b,planD.svcRoads[sr][b],ed,null,1,true);
+    h+=`</div></div>`;
+  });
+  h+=`</div>`;
   h+=`</div>`; // plan-side-body
 
   // ── STAFF MATRIX for next shift ──
@@ -2000,8 +2042,8 @@ function handleCrossDrop(src,dst){
 
   const srcData=src.plan?planD:D;
   const dstData=dst.plan?planD:D;
-  const srcStore=src.type==='road'?srcData.roads:srcData.subSheds;
-  const dstStore=dst.type==='road'?dstData.roads:dstData.subSheds;
+  const srcStore=getStore(srcData,src.type);
+  const dstStore=getStore(dstData,dst.type);
 
   const sd=srcStore[src.id][src.bay];
   const dd=dstStore[dst.id]?.[dst.bay]||null;
@@ -2102,6 +2144,20 @@ function copyAllActiveToNext(){
       }
     }
   });
+  SVC_ROADS.forEach(s=>{
+    for(let b=1;b<=SVC_BAYS;b++){
+      const cur=D.svcRoads?.[s]?.[b];
+      if(!planD.svcRoads)planD.svcRoads={};
+      const plan=planD.svcRoads?.[s]?.[b];
+      if(cur&&cur.unit&&cur.status!=='COMPLETE'){
+        if(!plan){
+          if(!planD.svcRoads[s])planD.svcRoads[s]={};
+          planD.svcRoads[s][b]=JSON.parse(JSON.stringify(cur));
+          copied++;
+        } else {skipped++}
+      }
+    }
+  });
   autoPlanS();render();
   alert(`Copied ${copied} active unit${copied!==1?'s':''} to next shift.${skipped?' '+skipped+' skipped (bay already occupied in next shift).':''}`);
 }
@@ -2109,8 +2165,8 @@ function copyAllActiveToNext(){
 // Copy a single unit from current shift to the same bay in next shift
 function copySingleToNext(type,id,bay){
   if(!planMode)return;
-  const src=type==='road'?D.roads:D.subSheds;
-  const dst=type==='road'?planD.roads:planD.subSheds;
+  const src=getStore(D,type);
+  const dst=getStore(planD,type);
   const cur=src?.[id]?.[bay];
   if(!cur||!cur.unit)return;
   if(dst?.[id]?.[bay]){alert('Bay already occupied in next shift. Clear it first or drag to a different bay.');return}

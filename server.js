@@ -238,6 +238,17 @@ app.get('/api/admin/stats', async (req, res) => {
           }
         }
       }
+      if (d.svcRoads) {
+        for (const bays of Object.values(d.svcRoads)) {
+          for (const bay of Object.values(bays)) {
+            if (bay && bay.unit) {
+              totalUnits++;
+              if (bay.status === 'COMPLETE') complete++;
+              if (bay.status === 'STOPPED') stopped++;
+            }
+          }
+        }
+      }
       avgDays = daysList.length ? (daysList.reduce((a, b) => a + b, 0) / daysList.length).toFixed(1) : 0;
       const awaitingCount = (d.awaiting || []).length;
       const staffCount = (() => {
@@ -390,6 +401,18 @@ app.get('/api/search', async (req, res) => {
             const text = JSON.stringify(bay).toLowerCase();
             if (text.includes(q)) {
               hits.push({ key: row.key, type: 'sub', id: shedName, bay: parseInt(bayNum), unit: bay.unit, detail: [bay.worktype, bay.status, bay.team, bay.comments].filter(Boolean).join(' · ') });
+            }
+          }
+        }
+      }
+      // Search service shed roads
+      if (d.svcRoads) {
+        for (const [roadName, bays] of Object.entries(d.svcRoads)) {
+          for (const [bayNum, bay] of Object.entries(bays)) {
+            if (!bay) continue;
+            const text = JSON.stringify(bay).toLowerCase();
+            if (text.includes(q)) {
+              hits.push({ key: row.key, type: 'svc', id: roadName, bay: parseInt(bayNum), unit: bay.unit, detail: [bay.worktype, bay.status, bay.team, bay.comments].filter(Boolean).join(' · ') });
             }
           }
         }
