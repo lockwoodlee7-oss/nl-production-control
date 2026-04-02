@@ -510,7 +510,7 @@ body.has-announce.plan-mode main{padding-top:214px}
     <div class="swap-from" id="swapFrom"></div>
     <div class="swap-arrow">&#9660;</div>
     <div class="swap-to" id="swapTo"></div>
-    <div class="swap-info">The next shift will become the live shift.<br>You can then start building the following shift.</div>
+    <div class="swap-info">The next shift will go live exactly as you built it.<br>No units will be auto-copied or overwritten.<br>You can then start building the following shift.</div>
   </div>
 </div>
 <div class="mf"><button class="btn btn-x" onclick="closeSwap()">Cancel</button><button class="btn btn-s" style="background:#059669" onclick="executeSwapover()">Confirm Swapover</button></div></div></div>
@@ -1067,6 +1067,10 @@ function renderBay(type,id,bay,d,ed,spec,span,isPlan){
     if(days){
       const dc=days>=5?'days-over-b':days>=3?'days-warn-b':'days-ok-b';
       h+=`<span class="days-badge ${dc}">${days}d</span>`;
+    }
+    // Copy to next shift button (only on main shift bays when builder is open)
+    if(!isPlan&&planMode&&d.status!=='COMPLETE'){
+      h+=`<button class="flag" onclick="event.stopPropagation();copySingleToNext('${type}',${typeof id==='string'?"'"+id+"'":id},${bay})" style="position:absolute;bottom:4px;left:8px;cursor:pointer;background:rgba(244,121,59,.12);color:var(--orange);border:none;font-size:8px;padding:2px 5px;z-index:2" title="Copy to next shift">&#8594; NEXT</button>`;
     }
     h+=`<span class="sbar"></span>`;
     const tips=[`Unit: ${d.unit}`,fleet?`Class ${fleet.c} \u00b7 ${fleet.n}-car`:'',fleet?`Vehicles: ${fleet.v.join(', ')}`:'',d.worktype?`Work: ${d.worktype}`:'',d.exam?`Exam: ${d.exam}`:'',d.team?`Team: ${d.team}`:'',d.priority?`Priority: ${d.priority}`:'',d.status?`Status: ${d.status}`:'',days?`Days on shed: ${days}`:'',d.sched_release?`Sched: ${fmtDT(d.sched_release)}`:'',d.thirdParty?'\u26a0 THIRD PARTY':'',d.isolated?'\u26a1 ISOLATED':'',d.comments?`Notes: ${d.comments}`:''].filter(Boolean);
@@ -1670,7 +1674,14 @@ function openNewShift(){nsMode='copy';document.getElementById('nsCopy').classLis
 function closeNS(){document.getElementById('nsModal').classList.remove('open')}
 function nsSel(m){nsMode=m;document.getElementById('nsCopy').classList.toggle('selected',m==='copy');document.getElementById('nsBlank').classList.toggle('selected',m==='blank')}
 async function createNS(){const now=new Date(),type=sType(now);let ds=now.toISOString().slice(0,10);if(type==='NIGHT'&&now.getHours()<6){const p=new Date(now);p.setDate(p.getDate()-1);ds=p.toISOString().slice(0,10)}
-  const nk=mkKey(ds,type);let nd;
+  const nk=mkKey(ds,type);
+  // Check if this shift already has data
+  const existing=await loadD(nk);
+  if(existing&&existing.roads){
+    const hasUnits=Object.values(existing.roads).some(bays=>Object.values(bays).some(b=>b&&b.unit));
+    if(hasUnits&&!confirm('This shift already has units placed (possibly pre-built via Build Next Shift). Creating a new shift will overwrite it. Continue?'))return;
+  }
+  let nd;
   if(nsMode==='copy'){nd=JSON.parse(JSON.stringify(D));ROADS.forEach(rc=>{for(let b=1;b<=4;b++){if(nd.roads?.[rc.num]?.[b]?.status==='COMPLETE')nd.roads[rc.num][b]=null}});SUBS.forEach(s=>{for(let b=1;b<=4;b++){if(nd.subSheds?.[s]?.[b]?.status==='COMPLETE')nd.subSheds[s][b]=null}});nd.handover={PRIORITIES:'',['CONTRACTORS ON SITE']:'',['STAFFING / RESOURCE']:'',['HANDOVER NOTES']:`Carried over from: ${kLabel(actKey)}\n`};nd.serviceShed={}}
   else{nd=emptyD()}
   await apiPut('/api/shifts/'+encodeURIComponent(nk),nd);curKey=nk;actKey=nk;D=nd;closeNS();await render()}
@@ -1863,8 +1874,17 @@ function renderPlanSide(){
   if(!planD.handover)planD.handover={};
   const psm=planD.staffMatrix;
 
+  // Count units already in next shift
+  let nextCount=0;
+  ROADS.forEach(rc=>{for(let b=1;b<=4;b++){if(planD.roads?.[rc.num]?.[b]?.unit)nextCount++}});
+  SUBS.forEach(s=>{for(let b=1;b<=4;b++){if(planD.subSheds?.[s]?.[b]?.unit)nextCount++}});
+
   let h=`<div class="plan-side" id="planSide">`;
-  h+=`<div class="plan-side-hdr"><h3>${isDay?'DAY':'NIGHT'} — ${esc(kLabel(planKey))}</h3></div>`;
+  h+=`<div class="plan-side-hdr"><h3>${isDay?'DAY':'NIGHT'} — ${esc(kLabel(planKey))}</h3><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">${nextCount} units</span></div>`;
+  h+=`<div style="padding:6px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap">`;
+  h+=`<button class="ts-btn" onclick="copyAllActiveToNext()" style="font-size:10px">Copy All Active Units &#8594;</button>`;
+  h+=`<button class="ts-btn" style="font-size:10px;border-color:var(--red);color:var(--red)" onclick="if(confirm('Clear all units from next shift?')){planD=emptyD();autoPlanS();render()}">Clear Next Shift</button>`;
+  h+=`</div>`;
   h+=`<div class="plan-side-body">`;
 
   // Condensed shed grid
@@ -2037,6 +2057,53 @@ function copyHandoverToNext(){
 }
 
 // ═══ SHIFT SWAPOVER ═══
+// Copy all active (non-COMPLETE) units from current shift to next shift (empty bays only)
+function copyAllActiveToNext(){
+  if(!planMode||!planKey)return;
+  let copied=0,skipped=0;
+  ROADS.forEach(rc=>{
+    for(let b=1;b<=4;b++){
+      const cur=D.roads?.[rc.num]?.[b];
+      const plan=planD.roads?.[rc.num]?.[b];
+      if(cur&&cur.unit&&cur.status!=='COMPLETE'){
+        if(!plan){
+          if(!planD.roads[rc.num])planD.roads[rc.num]={};
+          planD.roads[rc.num][b]=JSON.parse(JSON.stringify(cur));
+          copied++;
+        } else {skipped++}
+      }
+    }
+  });
+  SUBS.forEach(s=>{
+    for(let b=1;b<=4;b++){
+      const cur=D.subSheds?.[s]?.[b];
+      const plan=planD.subSheds?.[s]?.[b];
+      if(cur&&cur.unit&&cur.status!=='COMPLETE'){
+        if(!plan){
+          if(!planD.subSheds[s])planD.subSheds[s]={};
+          planD.subSheds[s][b]=JSON.parse(JSON.stringify(cur));
+          copied++;
+        } else {skipped++}
+      }
+    }
+  });
+  autoPlanS();render();
+  alert(`Copied ${copied} active unit${copied!==1?'s':''} to next shift.${skipped?' '+skipped+' skipped (bay already occupied in next shift).':''}`);
+}
+
+// Copy a single unit from current shift to the same bay in next shift
+function copySingleToNext(type,id,bay){
+  if(!planMode)return;
+  const src=type==='road'?D.roads:D.subSheds;
+  const dst=type==='road'?planD.roads:planD.subSheds;
+  const cur=src?.[id]?.[bay];
+  if(!cur||!cur.unit)return;
+  if(dst?.[id]?.[bay]){alert('Bay already occupied in next shift. Clear it first or drag to a different bay.');return}
+  if(!dst[id])dst[id]={};
+  dst[id][bay]=JSON.parse(JSON.stringify(cur));
+  autoPlanS();render();
+}
+
 function openSwapConfirm(){
   if(!planMode||!planKey){alert('Open the shift builder first to set up the next shift.');return}
   document.getElementById('swapFrom').textContent=kLabel(actKey);
@@ -2047,34 +2114,8 @@ function closeSwap(){document.getElementById('swapModal').classList.remove('open
 
 async function executeSwapover(){
   closeSwap();
-  // Merge any changes from current shift into the planned next shift
-  // Units added/moved on current shift AFTER the next shift was built get carried over
-  const freshCurrent=await loadD(actKey);
-  if(freshCurrent&&freshCurrent.roads){
-    // Walk current shift — any occupied bay that is empty in planD gets copied across
-    // (unless unit is COMPLETE, those don't carry over)
-    ROADS.forEach(rc=>{
-      for(let b=1;b<=4;b++){
-        const cur=freshCurrent.roads?.[rc.num]?.[b];
-        const plan=planD.roads?.[rc.num]?.[b];
-        if(cur&&cur.unit&&cur.status!=='COMPLETE'&&!plan){
-          if(!planD.roads[rc.num])planD.roads[rc.num]={};
-          planD.roads[rc.num][b]=JSON.parse(JSON.stringify(cur));
-        }
-      }
-    });
-    SUBS.forEach(s=>{
-      for(let b=1;b<=4;b++){
-        const cur=freshCurrent.subSheds?.[s]?.[b];
-        const plan=planD.subSheds?.[s]?.[b];
-        if(cur&&cur.unit&&cur.status!=='COMPLETE'&&!plan){
-          if(!planD.subSheds[s])planD.subSheds[s]={};
-          planD.subSheds[s][b]=JSON.parse(JSON.stringify(cur));
-        }
-      }
-    });
-  }
-  // Save the planned shift data (now merged)
+  // NO auto-merge — the next shift is saved exactly as the user built it
+  // Save the planned shift data as-is
   await apiPut('/api/shifts/'+encodeURIComponent(planKey),planD);
   // Switch to the next shift as the live shift
   const newKey=planKey;
