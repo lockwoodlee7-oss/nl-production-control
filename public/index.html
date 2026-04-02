@@ -454,7 +454,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="fr3"><div class="fg"><label>Unit Number *</label><input type="text" class="fi mono" id="fUnit" autocomplete="off" oninput="onUnitInput()"></div><div class="fg"><label>Vehicle / Class</label><input type="text" class="fi" id="fVeh" readonly style="opacity:.7"></div><div class="fg"><label>Leading Vehicle</label><select class="fi mono" id="fLead"></select></div></div>
   <div class="fr3"><div class="fg"><label>Exam Number *</label><input type="text" class="fi" id="fExam" autocomplete="off"></div><div class="fg" style="grid-column:span 2"></div></div>
   <div class="fg"><label>Work Type * (select all that apply)</label><div id="fWtChecks" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
-  <div class="fr3"><div class="fg"><label>Team *</label><select class="fi" id="fTeam"><option value="">—</option><option>A Team</option><option>B Team</option><option>C Team</option><option>D Team</option><option>MFT</option><option>LHP</option><option>TRI</option><option>CAF</option></select></div><div class="fg"><label>Staff *</label><input type="number" class="fi mono" id="fStaff" min="0" max="20"></div></div>
+  <input type="hidden" id="fTeam"><input type="hidden" id="fStaff">
   <div class="fr3"><div class="fg"><label>Priority *</label><select class="fi" id="fPri"><option value="">—</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></div><div class="fg"><label>Status *</label><select class="fi" id="fStat"><option value="">—</option><option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option><option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>COMPLETE</option><option>STOPPED</option><option>WAITING</option></select></div><div class="fg"><label>Reason</label><select class="fi" id="fReason"><option value="">—</option><option>Material</option><option>Tech support</option><option>Staff Resource</option><option>Quality</option><option>Authority</option><option>Access</option><option>Other</option></select></div></div>
   <div class="fr3"><div class="fg"><label>Arrival Time *</label><input type="datetime-local" class="fi" id="fArr"></div><div class="fg"><label>Sched Release *</label><input type="datetime-local" class="fi" id="fSR"></div><div class="fg"><label>Est Release</label><input type="datetime-local" class="fi" id="fER"></div></div>
   <div class="fg"><label>Trades Required</label>
@@ -491,6 +491,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="fg"><label>Reason for Visit</label><input type="text" class="fi" id="awReason" placeholder="e.g. Defect repair, Exam, Modification..." autocomplete="off"></div>
   <div class="fr"><div class="fg"><label>Current Location</label><input type="text" class="fi" id="awCurLoc" placeholder="e.g. Road 3, Yard, Fuel Point..." autocomplete="off"></div><div class="fg"><label>Needs Siting To</label><input type="text" class="fi" id="awSiteTo" placeholder="e.g. Road 1 Bay 2, Any pit road..." autocomplete="off"></div></div>
   <div class="fr"><div class="fg"><label>Completion %</label><select class="fi mono" id="awPct"><option value="0">0%</option><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option></select></div><div class="fg"><label>Required for Completion</label><input type="text" class="fi" id="awReq" placeholder="e.g. Parts on order, Awaiting authority..." autocomplete="off"></div></div>
+  <div class="fr"><div class="fg"><label>Arrival Date/Time</label><input type="datetime-local" class="fi" id="awArr"></div><div class="fg"><label>Est Completion</label><input type="datetime-local" class="fi" id="awEst"></div></div>
   <div class="fg"><label>Update</label><textarea class="fi" id="awUpdate" rows="2" style="resize:vertical" placeholder="Latest update..."></textarea></div>
   <div class="fg"><label>Notes</label><textarea class="fi" id="awNotes" rows="2" style="resize:vertical" placeholder="Additional notes..."></textarea></div>
 </div>
@@ -647,7 +648,7 @@ const DEFAULT_HO=['PRIORITIES','CONTRACTORS ON SITE','STAFFING / RESOURCE','HAND
 const SVC_SLOTS=6;
 const LS_DARK='nlHub_darkMode';
 const WORK_TYPES=['Exam','Defect','Modification','FP','PIVT','UFC','GWL','Other'];
-const REQUIRED_FIELDS=['fUnit','fExam','fTeam','fStaff','fPri','fStat','fArr','fSR','fCom'];
+const REQUIRED_FIELDS=['fUnit','fExam','fPri','fStat','fArr','fSR','fCom'];
 
 const TEAM_ROSTERS={
 'A Team':{spm:'Dean Henshaw',lv6:'Matt Towler',lv5c1:'Tony Baran',lv5c2:'Jon Knowles',
@@ -696,24 +697,34 @@ async function allKeys(){return await apiGet('/api/shifts')||[]}
 async function loadD(k){return await apiGet('/api/shifts/'+encodeURIComponent(k))||emptyD()}
 // ═══ UNDO / REDO ═══
 const undoStack=[],redoStack=[];
-const MAX_UNDO=50;
+const MAX_UNDO=30;
+let undoTmr=null,lastUndoSnap='';
 
 function pushUndo(){
-  undoStack.push(JSON.stringify(D));
-  if(undoStack.length>MAX_UNDO)undoStack.shift();
-  redoStack.length=0;
-  updateUndoButtons();
+  // Debounce — only snapshot if data actually changed and not too frequently
+  clearTimeout(undoTmr);
+  undoTmr=setTimeout(()=>{
+    const snap=JSON.stringify(D);
+    if(snap===lastUndoSnap)return; // No change
+    undoStack.push(lastUndoSnap||snap);
+    if(undoStack.length>MAX_UNDO)undoStack.shift();
+    redoStack.length=0;
+    lastUndoSnap=snap;
+    updateUndoButtons();
+  },1000);
 }
 
 function updateUndoButtons(){
-  document.getElementById('btnUndo').disabled=undoStack.length===0;
-  document.getElementById('btnRedo').disabled=redoStack.length===0;
+  const u=document.getElementById('btnUndo'),r=document.getElementById('btnRedo');
+  if(u)u.disabled=undoStack.length===0;
+  if(r)r.disabled=redoStack.length===0;
 }
 
 async function undo(){
   if(!undoStack.length)return;
   redoStack.push(JSON.stringify(D));
   D=JSON.parse(undoStack.pop());
+  lastUndoSnap=JSON.stringify(D);
   updateUndoButtons();
   await saveD();await render();
 }
@@ -722,6 +733,7 @@ async function redo(){
   if(!redoStack.length)return;
   undoStack.push(JSON.stringify(D));
   D=JSON.parse(redoStack.pop());
+  lastUndoSnap=JSON.stringify(D);
   updateUndoButtons();
   await saveD();await render();
 }
@@ -1100,6 +1112,8 @@ function openAW(idx){
   document.getElementById('awSiteTo').value=aw?.siteTo||'';
   document.getElementById('awPct').value=aw?.pct||'0';
   document.getElementById('awReq').value=aw?.reqComplete||'';
+  document.getElementById('awArr').value=aw?.arrtime||'';
+  document.getElementById('awEst').value=aw?.estComplete||'';
   document.getElementById('awUpdate').value=aw?.update||'';
   document.getElementById('awNotes').value=aw?.notes||'';
   document.getElementById('awModal').classList.add('open');
@@ -1110,7 +1124,9 @@ function saveAW(){
   const unit=document.getElementById('awUnit').value.trim();
   if(!unit){document.getElementById('awUnit').classList.add('invalid');return}
   if(!D.awaiting)D.awaiting=[];
-  const entry={unit,reason:document.getElementById('awReason').value.trim(),currentLoc:document.getElementById('awCurLoc').value.trim(),siteTo:document.getElementById('awSiteTo').value.trim(),owner:document.getElementById('awOwner').value,pct:document.getElementById('awPct').value,reqComplete:document.getElementById('awReq').value.trim(),update:document.getElementById('awUpdate').value.trim(),notes:document.getElementById('awNotes').value.trim()};
+  const entry={unit,reason:document.getElementById('awReason').value.trim(),currentLoc:document.getElementById('awCurLoc').value.trim(),siteTo:document.getElementById('awSiteTo').value.trim(),owner:document.getElementById('awOwner').value,pct:document.getElementById('awPct').value,reqComplete:document.getElementById('awReq').value.trim(),arrtime:document.getElementById('awArr').value,estComplete:document.getElementById('awEst').value,update:document.getElementById('awUpdate').value.trim(),notes:document.getElementById('awNotes').value.trim()};
+  // Preserve _bayData if editing an existing entry that has it
+  if(awEditIdx>=0&&D.awaiting[awEditIdx]?._bayData)entry._bayData=D.awaiting[awEditIdx]._bayData;
   if(awEditIdx>=0)D.awaiting[awEditIdx]=entry;
   else D.awaiting.push(entry);
   autoS();render();closeAW();
@@ -1199,7 +1215,7 @@ function handleAwaitingDrop(awIdx,dst){
       unit:aw.unit,vehicle:'',leadVeh:'',exam:'',
       worktype:aw.reason||'',team:aw.owner||'',staffcount:'',
       priority:'P3',status:'10%',reason:'',
-      arrtime:now,sched_release:'',est_release:'',
+      arrtime:aw.arrtime||now,sched_release:aw.estComplete||'',est_release:aw.estComplete||'',
       comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||''),
       thirdParty:false,isolated:false,trades:{},
       journey:[{location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed from awaiting attention list into '+newLoc}]
