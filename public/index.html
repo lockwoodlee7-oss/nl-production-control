@@ -386,6 +386,15 @@ body.has-announce.plan-mode main{padding-top:214px}
 .team-sel .ts-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--orange);background:rgba(244,121,59,.08);color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}.ts-btn:hover{background:var(--orange);color:#fff}
 .sm-box-wrap{display:inline-flex;align-items:center;gap:0;position:relative}
 .sm-box-x{position:absolute;right:1px;top:1px;width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:8px;font-weight:900;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;line-height:1}.sm-box-wrap:hover .sm-box-x{opacity:1}
+/* Work type checkboxes */
+.wt-chk{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);transition:all .15s;user-select:none}
+.wt-chk:hover{border-color:var(--orange)}.wt-chk input{accent-color:var(--orange);width:14px;height:14px}
+.wt-chk.checked{border-color:var(--orange);background:rgba(244,121,59,.06);color:var(--orange)}
+/* Staff on bay */
+.bay .staff-tags{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px}
+.bay .staff-tag{font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(124,58,237,.12);color:var(--purple);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.3px}
+/* Bay history indicator */
+.bay .bay-hist{position:absolute;top:5px;left:8px;font-size:8px;color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.5px}
 /* Fleet info banner in modal */
 .fleet-banner{padding:8px 12px;border-radius:6px;background:var(--blue-bg);border:1px solid var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .fleet-banner .fb-class{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--blue-t)}
@@ -444,7 +453,8 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="val-msg" id="valMsg">All fields marked must be completed before saving</div>
   <div class="fr3"><div class="fg"><label>Unit Number *</label><input type="text" class="fi mono" id="fUnit" autocomplete="off" oninput="onUnitInput()"></div><div class="fg"><label>Vehicle / Class</label><input type="text" class="fi" id="fVeh" readonly style="opacity:.7"></div><div class="fg"><label>Leading Vehicle</label><select class="fi mono" id="fLead"></select></div></div>
   <div class="fr3"><div class="fg"><label>Exam Number *</label><input type="text" class="fi" id="fExam" autocomplete="off"></div><div class="fg" style="grid-column:span 2"></div></div>
-  <div class="fr3"><div class="fg"><label>Work Type *</label><select class="fi" id="fWt"><option value="">—</option><option>Exam</option><option>Defect</option><option>Modification</option><option>FP</option><option>UFC</option><option>GWL</option><option>Other</option></select></div><div class="fg"><label>Team *</label><select class="fi" id="fTeam"><option value="">—</option><option>A Team</option><option>B Team</option><option>C Team</option><option>D Team</option><option>MFT</option><option>LHP</option><option>TRI</option><option>CAF</option></select></div><div class="fg"><label>Staff *</label><input type="number" class="fi mono" id="fStaff" min="0" max="20"></div></div>
+  <div class="fg"><label>Work Type * (select all that apply)</label><div id="fWtChecks" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+  <div class="fr3"><div class="fg"><label>Team *</label><select class="fi" id="fTeam"><option value="">—</option><option>A Team</option><option>B Team</option><option>C Team</option><option>D Team</option><option>MFT</option><option>LHP</option><option>TRI</option><option>CAF</option></select></div><div class="fg"><label>Staff *</label><input type="number" class="fi mono" id="fStaff" min="0" max="20"></div></div>
   <div class="fr3"><div class="fg"><label>Priority *</label><select class="fi" id="fPri"><option value="">—</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></div><div class="fg"><label>Status *</label><select class="fi" id="fStat"><option value="">—</option><option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option><option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>COMPLETE</option><option>STOPPED</option><option>WAITING</option></select></div><div class="fg"><label>Reason</label><select class="fi" id="fReason"><option value="">—</option><option>Material</option><option>Tech support</option><option>Staff Resource</option><option>Quality</option><option>Authority</option><option>Access</option><option>Other</option></select></div></div>
   <div class="fr3"><div class="fg"><label>Arrival Time *</label><input type="datetime-local" class="fi" id="fArr"></div><div class="fg"><label>Sched Release *</label><input type="datetime-local" class="fi" id="fSR"></div><div class="fg"><label>Est Release</label><input type="datetime-local" class="fi" id="fER"></div></div>
   <div class="fg"><label>Trades Required</label>
@@ -636,7 +646,8 @@ const SUBS=['UFC','GWL'];
 const DEFAULT_HO=['PRIORITIES','CONTRACTORS ON SITE','STAFFING / RESOURCE','HANDOVER NOTES'];
 const SVC_SLOTS=6;
 const LS_DARK='nlHub_darkMode';
-const REQUIRED_FIELDS=['fUnit','fExam','fWt','fTeam','fStaff','fPri','fStat','fArr','fSR','fCom'];
+const WORK_TYPES=['Exam','Defect','Modification','FP','PIVT','UFC','GWL','Other'];
+const REQUIRED_FIELDS=['fUnit','fExam','fTeam','fStaff','fPri','fStat','fArr','fSR','fCom'];
 
 const TEAM_ROSTERS={
 'A Team':{spm:'Dean Henshaw',lv6:'Matt Towler',lv5c1:'Tony Baran',lv5c2:'Jon Knowles',
@@ -942,14 +953,33 @@ async function render(){
 
   // TASK ASSIGNMENT
   if(!D.taskAssign)D.taskAssign=[];
+  // Build smart task suggestions datalist from berthed units
+  const taskSuggestions=[];
+  const staffNames=[];
+  // Collect all staff from matrix for person datalist
+  const smTA=D.staffMatrix||{};
+  ['spm','lv6','lv5c1','lv5c2'].forEach(k=>{if(smTA[k])staffNames.push(smTA[k])});
+  ['lv4elec','lv4mech','gwl','vb','lv3','tri','caf'].forEach(k=>{(smTA[k]||[]).forEach(n=>{if(n&&n.trim())staffNames.push(n)})});
+  items.forEach(it=>{
+    const wt=it.worktype||'';const u=it.unit;const ex=it.exam||'';const loc=(it.tp==='road'?'Rd':'')+ it.id+' B'+it.bay;
+    if(wt.includes('Exam'))taskSuggestions.push(`Exam work ${u} ${ex} ${loc}`);
+    if(wt.includes('Defect'))taskSuggestions.push(`Defect repair ${u} ${loc}`);
+    if(wt.includes('Modification'))taskSuggestions.push(`Modification ${u} ${loc}`);
+    if(wt.includes('PIVT'))taskSuggestions.push(`PIVT ${u} ${loc}`);
+    taskSuggestions.push(`Electrical work ${u} ${wt} ${loc}`);
+    taskSuggestions.push(`Mechanical work ${u} ${wt} ${loc}`);
+    taskSuggestions.push(`VB work ${u} ${wt} ${loc}`);
+  });
+  h+=`<datalist id="dl_taskPerson">`;staffNames.forEach(n=>{h+=`<option value="${esc(n)}">`});h+=`</datalist>`;
+  h+=`<datalist id="dl_taskSuggest">`;taskSuggestions.forEach(s=>{h+=`<option value="${esc(s)}">`});h+=`</datalist>`;
   h+=`<div class="staff-toggle" id="taToggle" onclick="toggleTaskAssign()"><h3>Task Assignment</h3><span class="st-arr">&#9660;</span></div>`;
   h+=`<div class="staff-body" id="taBody">`;
   if(ed)h+=`<div style="display:flex;gap:8px;margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted)"><span style="flex:1">PERSON</span><span style="flex:2">TASK / ASSIGNMENT</span><span style="width:24px"></span></div>`;
   D.taskAssign.forEach((ta,i)=>{
     h+=`<div class="ta-row">`;
     if(ed){
-      h+=`<input class="ta-person" value="${esc(ta.person||'')}" onchange="onTaskAssign(${i},'person',this.value)" placeholder="Name...">`;
-      h+=`<input class="ta-task" value="${esc(ta.task||'')}" onchange="onTaskAssign(${i},'task',this.value)" placeholder="Task / assignment...">`;
+      h+=`<input class="ta-person" value="${esc(ta.person||'')}" onchange="onTaskAssign(${i},'person',this.value)" placeholder="Name..." list="dl_taskPerson">`;
+      h+=`<input class="ta-task" value="${esc(ta.task||'')}" onchange="onTaskAssign(${i},'task',this.value)" placeholder="Task / assignment..." list="dl_taskSuggest">`;
       h+=`<button class="ta-del" onclick="delTaskAssign(${i})">&times;</button>`;
     } else {
       h+=`<span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">${esc(ta.person||'—')}</span>`;
@@ -1011,6 +1041,22 @@ function renderBay(type,id,bay,d,ed,spec,span,isPlan){
     }
     let flags='';if(d.thirdParty)flags+=`<span class="flag flag-3rd">3RD PARTY</span>`;if(d.isolated)flags+=`<span class="flag flag-iso">ISOLATED</span>`;
     if(flags)h+=`<div class="flag-row">${flags}</div>`;
+    // Staff assigned to this unit (from task assignments)
+    const srcD=isPlan?planD:D;
+    if(srcD.taskAssign&&srcD.taskAssign.length){
+      const unitStr=d.unit.toLowerCase();
+      const assigned=srcD.taskAssign.filter(ta=>ta.task&&ta.person&&ta.task.toLowerCase().includes(unitStr));
+      if(assigned.length){
+        h+=`<div class="staff-tags">`;
+        assigned.forEach(a=>{h+=`<span class="staff-tag">${esc(a.person)}</span>`});
+        h+=`</div>`;
+      }
+    }
+    // Bay history indicator — check if multiple units have been in this bay this shift
+    const bHist=(srcD._bayHist||{})[type+'_'+id+'_'+bay]||[];
+    if(bHist.length>0){
+      h+=`<span class="bay-hist" title="Previous units this shift: ${bHist.map(bh=>bh.unit+' ('+bh.worktype+')').join(', ')}">&#8635; ${bHist.length+1}</span>`;
+    }
     // Days badge
     if(days){
       const dc=days>=5?'days-over-b':days>=3?'days-warn-b':'days-ok-b';
@@ -1271,7 +1317,14 @@ function openBM(type,id,bay,isPlan){
   aRef={type,id,bay,isPlan:!!isPlan};const d=type==='road'?targetD.roads?.[id]?.[bay]:targetD.subSheds?.[id]?.[bay];
   document.getElementById('bmT').textContent=isEditable?(d?'Edit Bay':'Place Unit'):'View Bay (Read Only)';
   document.getElementById('bmL').textContent=(type==='road'?'Road '+id:id)+' \u2014 Bay '+bay;
-  const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fWt:'worktype',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
+  const map={fUnit:'unit',fVeh:'vehicle',fExam:'exam',fTeam:'team',fStaff:'staffcount',fPri:'priority',fStat:'status',fReason:'reason',fArr:'arrtime',fSR:'sched_release',fER:'est_release',fCom:'comments'};for(const[el,key]of Object.entries(map))document.getElementById(el).value=d?.[key]||'';
+  // Work type checkboxes
+  const wtContainer=document.getElementById('fWtChecks');
+  const selectedWt=(d?.worktype||'').split(', ').filter(Boolean);
+  wtContainer.innerHTML=WORK_TYPES.map(wt=>{
+    const chk=selectedWt.includes(wt)?'checked':'';
+    return`<label class="wt-chk ${chk?'checked':''}"><input type="checkbox" value="${wt}" ${chk} onchange="this.parentElement.classList.toggle('checked',this.checked)">${wt}</label>`;
+  }).join('');
   document.getElementById('f3rd').checked=!!d?.thirdParty;document.getElementById('fIso').checked=!!d?.isolated;
   // Leading vehicle — populate dropdown then set saved value
   onUnitInput();
@@ -1336,6 +1389,10 @@ function saveBay(){
     if(!val||val==='\u2014'){el.classList.add('invalid');valid=false}
     else{el.classList.remove('invalid')}
   });
+  // Validate work type checkboxes
+  const wtChecked=[...document.querySelectorAll('#fWtChecks input:checked')];
+  if(!wtChecked.length){valid=false;document.getElementById('fWtChecks').style.outline='2px solid var(--red)';document.getElementById('fWtChecks').style.borderRadius='6px'}
+  else{document.getElementById('fWtChecks').style.outline=''}
   if(!valid){document.getElementById('valMsg').classList.add('show');return}
   document.getElementById('valMsg').classList.remove('show');
 
@@ -1358,10 +1415,25 @@ function saveBay(){
   const targetD=aRef.isPlan?planD:D;
   const existingBay=(type==='road'?targetD.roads:targetD.subSheds)[id]?.[bay];
   const existingJourney=existingBay?.journey||[];
-  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:document.getElementById('fWt').value,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades,journey:existingJourney};
+  const selWts=[...document.querySelectorAll('#fWtChecks input:checked')].map(c=>c.value).join(', ');
+  const bd={unit:u,vehicle:document.getElementById('fVeh').value.trim(),leadVeh:document.getElementById('fLead').value,exam:document.getElementById('fExam').value.trim(),worktype:selWts,team:document.getElementById('fTeam').value,staffcount:document.getElementById('fStaff').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStat').value,reason:document.getElementById('fReason').value,arrtime:document.getElementById('fArr').value,sched_release:document.getElementById('fSR').value,est_release:document.getElementById('fER').value,comments:document.getElementById('fCom').value,thirdParty:document.getElementById('f3rd').checked,isolated:document.getElementById('fIso').checked,trades,journey:existingJourney};
   const store=type==='road'?targetD.roads:targetD.subSheds;if(!store[id])store[id]={};store[id][bay]=bd;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM();
 }
-function clearBay(){if(!aRef||!confirm('Clear this bay?'))return;const targetD=aRef.isPlan?planD:D;(aRef.type==='road'?targetD.roads:targetD.subSheds)[aRef.id][aRef.bay]=null;if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM()}
+function clearBay(){
+  if(!aRef||!confirm('Clear this bay?'))return;
+  const targetD=aRef.isPlan?planD:D;
+  const store=aRef.type==='road'?targetD.roads:targetD.subSheds;
+  const old=store[aRef.id]?.[aRef.bay];
+  // Record bay history — track that this unit was here
+  if(old&&old.unit){
+    if(!targetD._bayHist)targetD._bayHist={};
+    const bk=aRef.type+'_'+aRef.id+'_'+aRef.bay;
+    if(!targetD._bayHist[bk])targetD._bayHist[bk]=[];
+    targetD._bayHist[bk].push({unit:old.unit,worktype:old.worktype,status:old.status,cleared:new Date().toISOString()});
+  }
+  store[aRef.id][aRef.bay]=null;
+  if(aRef.isPlan){autoPlanS()}else{autoS()};render();closeBM();
+}
 
 function sendToAwaiting(){
   if(!aRef)return;
