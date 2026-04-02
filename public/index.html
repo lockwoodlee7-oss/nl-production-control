@@ -429,7 +429,6 @@ body.has-announce.plan-mode main{padding-top:214px}
   <button class="sn-btn" onclick="prevShift()">&#9664; Previous</button>
   <div class="sn-label" id="shiftLabel"></div><span class="lock-badge" id="lockBadge">&#128274; LOCKED</span>
   <button class="sn-btn" onclick="goCurrentShift()">Current</button>
-  <button class="sn-btn primary" onclick="openNewShift()">+ New Shift</button>
 </div>
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search units, keywords across all shifts...">
@@ -472,12 +471,6 @@ body.has-announce.plan-mode main{padding-top:214px}
 </div>
 <div class="mf"><button class="btn btn-d" id="btnCB" onclick="clearBay()">Clear Bay</button><button class="btn" id="btnToAW" style="background:var(--blue);color:#fff;display:none" onclick="sendToAwaiting()">&#8592; Send to Awaiting</button><div style="display:flex;gap:6px"><button class="btn btn-x" onclick="closeBM()">Cancel</button><button class="btn btn-s" onclick="saveBay()">Save</button></div></div></div></div>
 
-<!-- NEW SHIFT MODAL -->
-<div class="modal-bg" id="nsModal"><div class="modal" style="width:400px"><div class="mh"><h2>Start New Shift</h2><button class="mx" onclick="closeNS()">&times;</button></div>
-<div class="mbody"><p style="font-size:13px;color:var(--text2);margin-bottom:14px">Create a new shift:</p>
-<div class="nsm-opt selected" id="nsCopy" onclick="nsSel('copy')"><h4>Copy from current</h4><p>Carries over units (clears COMPLETE)</p></div>
-<div class="nsm-opt" id="nsBlank" onclick="nsSel('blank')"><h4>Start blank</h4><p>Empty shed, fresh start</p></div>
-</div><div class="mf"><button class="btn btn-x" onclick="closeNS()">Cancel</button><button class="btn btn-s" onclick="createNS()">Create</button></div></div></div>
 
 <!-- ARCHIVE MODAL -->
 <div class="modal-bg" id="archModal"><div class="modal" style="width:620px;max-height:80vh"><div class="mh"><h2>&#128193; Archive Search</h2><button class="mx" onclick="closeArch()">&times;</button></div>
@@ -1670,21 +1663,7 @@ async function delLink(i){const links=await getLinks();if(!confirm('Remove "'+li
 // SHIFT NAV
 async function prevShift(){const keys=await allKeys();if(!keys.length)return;const idx=keys.indexOf(actKey);if(idx===-1){actKey=keys[0];D=await loadD(actKey);await render()}else if(idx<keys.length-1){actKey=keys[idx+1];D=await loadD(actKey);await render()}}
 async function goCurrentShift(){actKey=curKey;D=await loadD(actKey);await render()}
-function openNewShift(){nsMode='copy';document.getElementById('nsCopy').classList.add('selected');document.getElementById('nsBlank').classList.remove('selected');document.getElementById('nsModal').classList.add('open')}
-function closeNS(){document.getElementById('nsModal').classList.remove('open')}
-function nsSel(m){nsMode=m;document.getElementById('nsCopy').classList.toggle('selected',m==='copy');document.getElementById('nsBlank').classList.toggle('selected',m==='blank')}
-async function createNS(){const now=new Date(),type=sType(now);let ds=now.toISOString().slice(0,10);if(type==='NIGHT'&&now.getHours()<6){const p=new Date(now);p.setDate(p.getDate()-1);ds=p.toISOString().slice(0,10)}
-  const nk=mkKey(ds,type);
-  // Check if this shift already has data
-  const existing=await loadD(nk);
-  if(existing&&existing.roads){
-    const hasUnits=Object.values(existing.roads).some(bays=>Object.values(bays).some(b=>b&&b.unit));
-    if(hasUnits&&!confirm('This shift already has units placed (possibly pre-built via Build Next Shift). Creating a new shift will overwrite it. Continue?'))return;
-  }
-  let nd;
-  if(nsMode==='copy'){nd=JSON.parse(JSON.stringify(D));ROADS.forEach(rc=>{for(let b=1;b<=4;b++){if(nd.roads?.[rc.num]?.[b]?.status==='COMPLETE')nd.roads[rc.num][b]=null}});SUBS.forEach(s=>{for(let b=1;b<=4;b++){if(nd.subSheds?.[s]?.[b]?.status==='COMPLETE')nd.subSheds[s][b]=null}});nd.handover={PRIORITIES:'',['CONTRACTORS ON SITE']:'',['STAFFING / RESOURCE']:'',['HANDOVER NOTES']:`Carried over from: ${kLabel(actKey)}\n`};nd.serviceShed={}}
-  else{nd=emptyD()}
-  await apiPut('/api/shifts/'+encodeURIComponent(nk),nd);curKey=nk;actKey=nk;D=nd;closeNS();await render()}
+// New Shift removed — use "Build Next Shift" instead
 
 // HISTORY
 async function toggleHist(hdr,idx,key){const body=document.getElementById('hb_'+idx);if(body.classList.contains('open')){body.classList.remove('open');hdr.classList.remove('open');return}
