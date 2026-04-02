@@ -1929,16 +1929,29 @@ function renderPlanSide(){
   ];
 
   h+=`<div class="builder-section"><h4>Staff Matrix <button class="copy-btn" onclick="copyStaffToNext()">Copy from current</button></h4>`;
+  // Team selector for next shift
+  h+=`<div class="bs-sm-row"><span class="bs-sm-label">Load Team</span>`;
+  h+=`<select class="bs-sm-input" id="planTeamSelect" onchange="loadPlanTeamRoster()" style="cursor:pointer"><option value="">— Select Team —</option>`;
+  Object.keys(TEAM_ROSTERS).forEach(t=>{h+=`<option value="${esc(t)}" ${psm.team===t?'selected':''}>${esc(t)}</option>`});
+  h+=`</select></div>`;
+  // Team name display
+  if(psm.team)h+=`<div class="bs-sm-row"><span class="bs-sm-label">Team</span><span style="font-size:12px;font-weight:700;color:var(--orange)">${esc(psm.team)}</span></div>`;
+  // Key roles
   keyRoles.forEach(r=>{
     h+=`<div class="bs-sm-row"><span class="bs-sm-label">${r.label}</span>`;
-    h+=`<input class="bs-sm-input" value="${esc(psm[r.key]||'')}" onchange="onPlanStaff('${r.key}',this.value)" placeholder="Name...">`;
+    h+=`<input class="bs-sm-input" value="${esc(psm[r.key]||'')}" onchange="onPlanStaff('${r.key}',this.value)" placeholder="Name or override...">`;
     h+=`</div>`;
   });
+  // Grade boxes with X buttons
   STAFF_BOXES.forEach(sb=>{
     if(!psm[sb.key])psm[sb.key]=[];
-    h+=`<div class="bs-sm-row"><span class="bs-sm-label">${sb.label}</span><div class="bs-sm-boxes">`;
+    const filled=psm[sb.key].filter(v=>v&&v.trim()).length;
+    h+=`<div class="bs-sm-row"><span class="bs-sm-label">${sb.label} (${filled})</span><div class="bs-sm-boxes">`;
     for(let i=0;i<sb.count;i++){
-      h+=`<input class="bs-sm-box" value="${esc(psm[sb.key][i]||'')}" onchange="onPlanStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}">`;
+      const val=psm[sb.key][i]||'';
+      h+=`<span class="sm-box-wrap"><input class="bs-sm-box" value="${esc(val)}" onchange="onPlanStaffBox('${sb.key}',${i},this.value)" placeholder="${i+1}">`;
+      if(val)h+=`<button class="sm-box-x" onclick="event.stopPropagation();clearPlanStaffSlot('${sb.key}',${i})" title="Remove">&times;</button>`;
+      h+=`</span>`;
     }
     h+=`</div></div>`;
   });
@@ -2033,6 +2046,29 @@ function handleCrossDrop(src,dst){
 }
 
 // ═══ NEXT SHIFT BUILDER — Staff & Task helpers ═══
+function loadPlanTeamRoster(){
+  const sel=document.getElementById('planTeamSelect');
+  const team=sel?sel.value:'';
+  if(!team||!TEAM_ROSTERS[team])return;
+  const r=TEAM_ROSTERS[team];
+  if(!planD.staffMatrix)planD.staffMatrix={};
+  planD.staffMatrix.team=team;
+  planD.staffMatrix.spm=r.spm||'';
+  planD.staffMatrix.lv6=r.lv6||'';
+  planD.staffMatrix.lv5c1=r.lv5c1||'';
+  planD.staffMatrix.lv5c2=r.lv5c2||'';
+  ['lv4elec','lv4mech','gwl','vb','lv3','tri','caf'].forEach(k=>{
+    planD.staffMatrix[k]=[];
+    const roster=r[k]||[];
+    for(let i=0;i<roster.length;i++)planD.staffMatrix[k][i]=roster[i];
+  });
+  autoPlanS();render();
+}
+function clearPlanStaffSlot(key,idx){
+  if(!planD.staffMatrix||!planD.staffMatrix[key])return;
+  planD.staffMatrix[key][idx]='';
+  autoPlanS();render();
+}
 function onPlanStaff(key,val){if(!planD.staffMatrix)planD.staffMatrix={};planD.staffMatrix[key]=val;autoPlanS()}
 function onPlanStaffBox(key,idx,val){if(!planD.staffMatrix)planD.staffMatrix={};if(!planD.staffMatrix[key])planD.staffMatrix[key]=[];planD.staffMatrix[key][idx]=val;autoPlanS()}
 function onPlanTask(idx,field,val){if(!planD.taskAssign)planD.taskAssign=[];if(!planD.taskAssign[idx])planD.taskAssign[idx]={};planD.taskAssign[idx][field]=val;autoPlanS()}
