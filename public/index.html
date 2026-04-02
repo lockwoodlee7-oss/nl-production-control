@@ -918,18 +918,12 @@ async function render(){
     h+=`</datalist>`;
   });
   // Key roles
-  const keyRoles=[{key:'team',label:'Team On Shift',dl:''},{key:'spm',label:'Shift Production Manager',dl:'dl_spm'},{key:'lv6',label:'Level 6',dl:'dl_lv6'},{key:'lv5c1',label:'Level 5C (1)',dl:'dl_lv5c'},{key:'lv5c2',label:'Level 5C (2)',dl:'dl_lv5c'}];
+  const keyRoles=[{key:'spm',label:'Shift Production Manager',dl:'dl_spm'},{key:'lv6',label:'Level 6',dl:'dl_lv6'},{key:'lv5c1',label:'Level 5C (1)',dl:'dl_lv5c'},{key:'lv5c2',label:'Level 5C (2)',dl:'dl_lv5c'}];
+  // Team on shift — shown as info row
+  h+=`<div class="sm-row"><span class="sm-label">Team On Shift</span><span style="font-size:14px;font-weight:700;color:var(--orange)">${esc(sm.team||'Not selected — use Load Team above')}</span></div>`;
   keyRoles.forEach(r=>{
     h+=`<div class="sm-row"><span class="sm-label">${r.label}</span>`;
-    if(ed){
-      if(r.key==='team'){
-        h+=`<select class="sm-input" onchange="onStaff('team',this.value)" style="cursor:pointer"><option value="">—</option>`;
-        Object.keys(TEAM_ROSTERS).forEach(t=>{h+=`<option value="${esc(t)}" ${sm.team===t?'selected':''}>${esc(t)}</option>`});
-        h+=`</select>`;
-      } else {
-        h+=`<input class="sm-input" value="${esc(sm[r.key]||'')}" onchange="onStaff('${r.key}',this.value)" placeholder="Enter name..." list="${r.dl}">`;
-      }
-    }
+    if(ed) h+=`<input class="sm-input" value="${esc(sm[r.key]||'')}" onchange="onStaff('${r.key}',this.value)" placeholder="Enter name or type to override..." list="${r.dl}">`;
     else h+=`<span style="font-size:13px;color:var(--text2)">${esc(sm[r.key]||'—')}</span>`;
     h+=`</div>`;
   });
@@ -1515,6 +1509,7 @@ function loadTeamRoster(){
     const roster=r[k]||[];
     for(let i=0;i<roster.length;i++)D.staffMatrix[k][i]=roster[i];
   });
+  smOpen=true; // Keep staff matrix open after loading
   autoS();render();
 }
 
