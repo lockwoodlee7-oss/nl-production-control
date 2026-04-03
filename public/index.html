@@ -1088,7 +1088,7 @@ function renderBay(type,id,bay,d,ed,spec,span,isPlan){
         const t=d.trades[tk];
         if(t&&parseInt(t.req)>0){
           const done=t.done?'\u2713':'';
-          thtml+=`<span class="flag" style="background:${t.done?'var(--green-bg)':'rgba(37,99,235,.1)'};color:${t.done?'var(--green-t)':'var(--blue)'}">${tNames[ti]}:${t.req}${done}</span>`;
+          thtml+=`<span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:4px;background:${t.done?'var(--green-bg)':'rgba(37,99,235,.12)'};color:${t.done?'var(--green-t)':'var(--blue)'};border:1px solid ${t.done?'var(--green)':'rgba(37,99,235,.25)'}">${tNames[ti]}: ${t.req} ${done}</span>`;
         }
       });
       if(thtml)h+=`<div class="flag-row">${thtml}</div>`;
