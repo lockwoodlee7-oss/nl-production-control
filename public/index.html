@@ -828,11 +828,7 @@ async function render(){
     h+=`</div></div><div class="road-bays">`;
     const consumed=new Set();
     for(let b=1;b<=4;b++){
-      if(consumed.has(b)){
-        // Bay consumed by a spanning unit — show as occupied, no click
-        h+=`<div class="bay" style="opacity:.25;pointer-events:none;border-style:dotted;min-height:90px;display:flex;align-items:center;justify-content:center" data-type="road" data-id="${rc.num}" data-bay="${b}"><span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px">\u25c0 OCCUPIED</span></div>`;
-        continue;
-      }
+      if(consumed.has(b))continue; // Spanned by a multi-car unit — skip silently
       const bd=D.roads?.[rc.num]?.[b];
       const span=bd?.unit?getCarCount(bd.unit):1;
       for(let s=1;s<span&&(b+s)<=4;s++)consumed.add(b+s);
@@ -1438,9 +1434,32 @@ function saveBay(){
   // Check bay span fits
   const cars=getCarCount(u);
   const{type,id,bay}=aRef;
-  if(type==='road'&&bay+cars-1>4){
-    alert(`This is a ${cars}-car unit and needs ${cars} bays. There are only ${4-bay+1} bays available from Bay ${bay}. Place it in Bay ${4-cars+1} or earlier.`);
-    return;
+  if(type==='road'&&cars>1){
+    // Can't overflow past bay 4
+    if(bay+cars-1>4){
+      alert(`This is a ${cars}-car unit and needs ${cars} bays. There are only ${4-bay+1} bays from Bay ${bay}. Place it in Bay ${4-cars+1} or earlier.`);
+      return;
+    }
+    // Check spanned bays aren't already occupied by another unit
+    const roadData=getStore(targetD,type)[id]||{};
+    for(let s=1;s<cars;s++){
+      const adj=roadData[bay+s];
+      if(adj&&adj.unit){
+        alert(`Bay ${bay+s} is occupied by ${adj.unit}. This ${cars}-car unit needs bays ${bay} to ${bay+cars-1}.`);
+        return;
+      }
+    }
+    // Check no other spanning unit overlaps into our bays
+    for(let b=1;b<bay;b++){
+      const prev=roadData[b];
+      if(prev&&prev.unit){
+        const prevSpan=getCarCount(prev.unit);
+        if(b+prevSpan-1>=bay){
+          alert(`Bay ${bay} is occupied by ${prev.unit} (${prevSpan}-car unit spanning from Bay ${b}).`);
+          return;
+        }
+      }
+    }
   }
   const trades={
     elec:{req:document.getElementById('trElec').value,done:document.getElementById('trElecDone').checked},
@@ -1903,10 +1922,7 @@ function renderPlanSide(){
     h+=`<div class="shed-road"><div class="road-label"><div class="road-name">Rd ${rc.num}</div></div><div class="road-bays">`;
     const consumed=new Set();
     for(let b=1;b<=4;b++){
-      if(consumed.has(b)){
-        h+=`<div class="bay" style="opacity:.25;pointer-events:none;border-style:dotted;min-height:52px;display:flex;align-items:center;justify-content:center" data-type="road" data-id="${rc.num}" data-bay="${b}" data-plan="1"><span style="font-size:8px;color:var(--muted)">\u25c0</span></div>`;
-        continue;
-      }
+      if(consumed.has(b))continue;
       const bd=planD.roads?.[rc.num]?.[b];
       const span=bd?.unit?getCarCount(bd.unit):1;
       for(let s=1;s<span&&(b+s)<=4;s++)consumed.add(b+s);
