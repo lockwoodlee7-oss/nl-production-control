@@ -461,7 +461,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="fr3"><div class="fg"><label>Exam Number *</label><input type="text" class="fi" id="fExam" autocomplete="off"></div><div class="fg" style="grid-column:span 2"></div></div>
   <div class="fg"><label>Work Type * (select all that apply)</label><div id="fWtChecks" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
   <input type="hidden" id="fTeam"><input type="hidden" id="fStaff">
-  <div class="fr3"><div class="fg"><label>Priority *</label><select class="fi" id="fPri"><option value="">—</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></div><div class="fg"><label>Status *</label><select class="fi" id="fStat"><option value="">—</option><option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option><option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>COMPLETE</option><option>STOPPED</option><option>WAITING</option></select></div><div class="fg"><label>Reason</label><select class="fi" id="fReason"><option value="">—</option><option>Material</option><option>Tech support</option><option>Staff Resource</option><option>Quality</option><option>Authority</option><option>Access</option><option>Other</option></select></div></div>
+  <div class="fr3"><div class="fg"><label>Priority *</label><select class="fi" id="fPri"><option value="">—</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></div><div class="fg"><label>Status *</label><select class="fi" id="fStat"><option value="">—</option><option>10%</option><option>20%</option><option>30%</option><option>40%</option><option>50%</option><option>60%</option><option>70%</option><option>80%</option><option>90%</option><option>COMPLETE</option><option>STOPPED</option><option>WAITING</option></select></div><div class="fg"><label>Reason</label><select class="fi" id="fReason"><option value="">—</option><option>Material</option><option>Tech support</option><option>Staff Resource</option><option>Quality</option><option>Authority</option><option>Access</option><option>Awaiting Arrival</option><option>Other</option></select></div></div>
   <div class="fr3"><div class="fg"><label>Arrival Time *</label><input type="datetime-local" class="fi" id="fArr"></div><div class="fg"><label>Sched Release *</label><input type="datetime-local" class="fi" id="fSR"></div><div class="fg"><label>Est Release</label><input type="datetime-local" class="fi" id="fER"></div></div>
   <div class="fg"><label>Trades Required</label>
     <div class="trade-grid">
@@ -643,7 +643,7 @@ body.has-announce.plan-mode main{padding-top:214px}
 <script>
 'use strict';
 const ROADS=[{num:1,elec:1,pit:1,jacks:0,spec:{}},{num:2,elec:1,pit:1,jacks:0,spec:{}},{num:3,elec:0,pit:1,jacks:0,spec:{3:'DROP TABLE',4:'JACKS'}},{num:4,elec:0,pit:1,jacks:0,spec:{3:'DT RECEIVE'}},{num:5,elec:0,pit:0,jacks:12,spec:{}}];
-const SUBS=['UFC','GWL'];
+const SUBS=['UFC','GWL','FUEL SHED'];
 const SVC_ROADS=['Service Shed 1','Service Shed 2','Service Shed 3','Service Shed 4'];
 const SVC_BAYS=10;
 const DEFAULT_HO=['PRIORITIES','CONTRACTORS ON SITE','STAFFING / RESOURCE','HANDOVER NOTES'];
@@ -681,7 +681,13 @@ let fleetReady=fetch('/fleet.json').then(r=>r.json()).then(d=>{FLEET=d}).catch((
 const socket=io();
 socket.on('connect',()=>{const el=document.getElementById('connStatus');el.textContent='\u25cf Live';el.style.color='rgba(52,211,153,.8)'});
 socket.on('disconnect',()=>{const el=document.getElementById('connStatus');el.textContent='\u25cf Offline';el.style.color='rgba(248,113,113,.8)'});
-socket.on('shift-updated',async(msg)=>{if(msg.key===actKey){const d=await loadD(actKey);if(d){D=d;await render()}}if(planMode&&msg.key===planKey){planD=await loadD(planKey);if(!planD.roads)planD=emptyD();await render()}});
+let selfSaveKeys=new Set();
+socket.on('shift-updated',async(msg)=>{
+  // Skip re-render if this client just saved this shift (prevents scroll reset & textarea focus loss)
+  if(selfSaveKeys.has(msg.key)){selfSaveKeys.delete(msg.key);return}
+  if(msg.key===actKey){const d=await loadD(actKey);if(d){D=d;await render()}}
+  if(planMode&&msg.key===planKey){planD=await loadD(planKey);if(!planD.roads)planD=emptyD();await render()}
+});
 socket.on('config-updated',async()=>{cachedLinks=null;cachedTpl=null;await render()});
 
 // ═══ API LAYER ═══
@@ -743,6 +749,7 @@ async function redo(){
 async function saveD(){
   const dot=document.getElementById('saveDot'),txt=document.getElementById('saveTxt');
   dot.classList.add('saving');txt.textContent='Saving...';
+  selfSaveKeys.add(actKey);
   try{await apiPut('/api/shifts/'+encodeURIComponent(actKey),D)}catch(e){console.error('Save failed:',e)}
   setTimeout(()=>{dot.classList.remove('saving');txt.textContent='Saved'},400);
 }
@@ -757,9 +764,9 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 
 // Get the correct data store for a bay type
 function getStore(d,type){
-  if(type==='road')return d.roads;
+  if(type==='road'){if(!d.roads)d.roads={};return d.roads}
   if(type==='svc'){if(!d.svcRoads)d.svcRoads={};return d.svcRoads}
-  return d.subSheds;
+  if(!d.subSheds)d.subSheds={};return d.subSheds;
 }
 
 // Fleet lookup
@@ -911,7 +918,7 @@ async function render(){
 
   // HANDOVER (collapsible)
   h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('handover')"><h2>Shift Handover</h2><span class="st-arr" id="arr_handover">&#9660;</span></div><div class="coll-body" id="sec_handover"><div class="pb">`;
-  tpl.forEach((sec,i)=>{const val=D.handover?.[sec.label]||'';h+=`<div class="ho-sec"><div class="ho-head"><span class="ho-lbl">${esc(sec.label)}</span>`;if(!sec.def&&ed)h+=`<button class="ho-del" onclick="delHoSec(${i})">&times;</button>`;h+=`</div>`;if(ed)h+=`<textarea class="ho-txt" data-sec="${esc(sec.label)}" oninput="onHo(this)" placeholder="Enter ${esc(sec.label.toLowerCase())} here...">${esc(val)}</textarea>`;else h+=`<textarea class="ho-txt" readonly>${esc(val||'(empty)')}</textarea>`;h+=`</div>`});
+  tpl.forEach((sec,i)=>{const val=D.handover?.[sec.label]||'';h+=`<div class="ho-sec"><div class="ho-head"><span class="ho-lbl">${esc(sec.label)}</span>`;if(!sec.def&&ed)h+=`<button class="ho-del" onclick="delHoSec(${i})">&times;</button>`;h+=`</div>`;if(ed)h+=`<textarea class="ho-txt" data-sec="${esc(sec.label)}" oninput="onHo(this)" onblur="onHo(this)" placeholder="Enter ${esc(sec.label.toLowerCase())} here...">${esc(val)}</textarea>`;else h+=`<textarea class="ho-txt" readonly>${esc(val||'(empty)')}</textarea>`;h+=`</div>`});
   if(ed)h+=`<button class="ho-add" onclick="openHM()">+ ADD SECTION</button>`;h+=`</div></div></div>`;
 
   // MANAGERS CONFIDENTIAL LOG (password protected)
@@ -1036,6 +1043,9 @@ async function render(){
   const hist=(await allKeys()).filter(k=>k!==actKey).slice(0,20);
   if(hist.length){h+=`<div class="hist-div"><span>Previous Shifts</span></div>`;hist.forEach((k,i)=>{const t=kType(k);h+=`<div class="hb"><div class="hh" onclick="toggleHist(this,${i},'${esc(k)}')"><h3>${esc(kLabel(k))} <span class="type ${t}" style="font-size:9px;padding:1px 6px;border-radius:4px">${t.toUpperCase()}</span></h3><span class="arr">&#9660;</span></div><div class="hbody" id="hb_${i}"></div></div>`})}
 
+  // Save scroll position before re-render
+  const scrollY=window.scrollY;
+  const planSideScroll=document.getElementById('planSide')?.scrollTop||0;
   // Wrap in planning split if plan mode is on
   if(planMode){
     const planSideHtml=renderPlanSide();
@@ -1044,6 +1054,9 @@ async function render(){
     document.getElementById('mc').innerHTML=h;
   }
   restoreSections();
+  // Restore scroll position
+  window.scrollTo(0,scrollY);
+  const ps=document.getElementById('planSide');if(ps)ps.scrollTop=planSideScroll;
   // Restore staff matrix / task assignment open state
   if(smOpen){document.getElementById('smToggle')?.classList.add('open');document.getElementById('smBody')?.classList.add('open')}
   if(taOpen){document.getElementById('taToggle')?.classList.add('open');document.getElementById('taBody')?.classList.add('open')}
@@ -1270,7 +1283,7 @@ function handleAwaitingDrop(awIdx,dst){
   setTimeout(()=>openBM(dst.type,dst.id,dst.bay),200);
 }
 
-function handleAwaitingDropToPlan(awIdx,dst){
+async function handleAwaitingDropToPlan(awIdx,dst){
   const aw=D.awaiting[awIdx];
   if(!aw)return;
   const ds=getStore(planD,dst.type);
@@ -1283,12 +1296,13 @@ function handleAwaitingDropToPlan(awIdx,dst){
     if(!bd.journey)bd.journey=[];
     bd.journey.push({location:'Awaiting → Next Shift',status:'Planned',timestamp:now,notes:'Placed into next shift at '+newLoc});
   } else {
-    bd={unit:aw.unit,vehicle:'',leadVeh:'',exam:'',worktype:aw.reason||'',team:aw.owner||'',staffcount:'',priority:'P3',status:'10%',reason:'',arrtime:now,sched_release:'',est_release:'',comments:aw.notes||'From awaiting: '+(aw.update||aw.reason||''),thirdParty:false,isolated:false,trades:{},journey:[{location:'Awaiting → Next Shift',status:'Planned',timestamp:now,notes:'Placed into next shift at '+newLoc}]};
+    bd={unit:aw.unit,vehicle:'',leadVeh:'',exam:'',worktype:aw.reason||'',team:aw.owner||'',staffcount:'0',priority:'P3',status:'10%',reason:'',arrtime:aw.arrtime||now,sched_release:aw.estComplete||'',est_release:aw.estComplete||'',comments:aw.notes||'From awaiting: '+(aw.update||aw.reason||''),thirdParty:false,isolated:false,trades:{},journey:[{location:'Awaiting → Next Shift',status:'Planned',timestamp:now,notes:'Placed into next shift at '+newLoc}]};
   }
   if(!ds[dst.id])ds[dst.id]={};
   ds[dst.id][dst.bay]=bd;
   D.awaiting.splice(awIdx,1);
-  autoPlanS();autoS();render();
+  // Save both shifts
+  await savePlanD();autoS();render();
 }
 
 function mvdSel(mode){
@@ -1538,7 +1552,7 @@ function sendToAwaiting(){
 }
 
 // HANDOVER
-function onHo(el){if(!D.handover)D.handover={};D.handover[el.dataset.sec]=el.value;autoS()}
+function onHo(el){if(!D.handover)D.handover={};D.handover[el.dataset.sec]=el.value;autoSNoRender()}
 function openHM(){document.getElementById('hoModal').classList.add('open');document.getElementById('hoName').value='';setTimeout(()=>document.getElementById('hoName').focus(),100)}
 function closeHM(){document.getElementById('hoModal').classList.remove('open')}
 async function addHoSec(){const name=document.getElementById('hoName').value.trim().toUpperCase();if(!name)return;const tpl=await getHoTpl();if(tpl.find(t=>t.label===name)){alert('Section already exists');return}tpl.push({label:name,def:0});await saveHoTpl(tpl);cachedTpl=tpl;closeHM();await render()}
@@ -1873,12 +1887,13 @@ async function switchPlanShift(key){
   planKey=key;
   await loadPlanShift();
   renderTimeline();
-  render();
+  await render();
 }
 
 async function savePlanD(){
   const dot=document.getElementById('saveDot'),txt=document.getElementById('saveTxt');
   dot.classList.add('saving');txt.textContent='Saving...';
+  selfSaveKeys.add(planKey);
   try{await apiPut('/api/shifts/'+encodeURIComponent(planKey),planD)}catch(e){console.error('Plan save failed:',e)}
   setTimeout(()=>{dot.classList.remove('saving');txt.textContent='Saved'},400);
 }
@@ -2039,11 +2054,19 @@ function renderPlanSide(){
   h+=`</div>`;
 
   // ── TASK ASSIGNMENT for next shift ──
+  // Build datalists for plan tasks
+  const planUnits=[];
+  ROADS.forEach(rc=>{for(let b=1;b<=4;b++){const bd=planD.roads?.[rc.num]?.[b];if(bd?.unit)planUnits.push(bd.unit+' '+(bd.worktype||'')+' Rd'+rc.num+' B'+b)}});
+  SUBS.forEach(s=>{for(let b=1;b<=4;b++){const bd=planD.subSheds?.[s]?.[b];if(bd?.unit)planUnits.push(bd.unit+' '+(bd.worktype||'')+' '+s+' B'+b)}});
+  const planStaffNames=[];
+  ['lv4elec','lv4mech','gwl','vb','lv3','tri','caf'].forEach(k=>{(psm[k]||[]).forEach(n=>{if(n&&n.trim())planStaffNames.push(n)})});
+  h+=`<datalist id="dl_planPerson">`;planStaffNames.forEach(n=>{h+=`<option value="${esc(n)}">`});h+=`</datalist>`;
+  h+=`<datalist id="dl_planTask">`;planUnits.forEach(u=>{h+=`<option value="${esc(u)}">`});h+=`</datalist>`;
   h+=`<div class="builder-section"><h4>Task Assignments <button class="copy-btn" onclick="copyTasksToNext()">Copy from current</button></h4>`;
   planD.taskAssign.forEach((ta,i)=>{
     h+=`<div class="bs-ta-row">`;
-    h+=`<input class="bs-ta-person" value="${esc(ta.person||'')}" onchange="onPlanTask(${i},'person',this.value)" placeholder="Name...">`;
-    h+=`<input class="bs-ta-task" value="${esc(ta.task||'')}" onchange="onPlanTask(${i},'task',this.value)" placeholder="Task...">`;
+    h+=`<input class="bs-ta-person" value="${esc(ta.person||'')}" onchange="onPlanTask(${i},'person',this.value)" placeholder="Name..." list="dl_planPerson">`;
+    h+=`<input class="bs-ta-task" value="${esc(ta.task||'')}" onchange="onPlanTask(${i},'task',this.value)" placeholder="Task..." list="dl_planTask">`;
     h+=`<button class="bs-ta-del" onclick="delPlanTask(${i})">&times;</button>`;
     h+=`</div>`;
   });
@@ -2143,6 +2166,13 @@ function loadPlanTeamRoster(){
     const roster=r[k]||[];
     for(let i=0;i<roster.length;i++)planD.staffMatrix[k][i]=roster[i];
   });
+  // Auto-populate task assignment with all staff names
+  if(!planD.taskAssign||!planD.taskAssign.length){
+    planD.taskAssign=[];
+    const allStaff=[];
+    ['lv4elec','lv4mech','gwl','vb','lv3'].forEach(k=>{(r[k]||[]).forEach(n=>{if(n)allStaff.push(n)})});
+    allStaff.forEach(n=>{planD.taskAssign.push({person:n,task:''})});
+  }
   autoPlanS();render();
 }
 function clearPlanStaffSlot(key,idx){
