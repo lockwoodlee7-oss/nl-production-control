@@ -1847,7 +1847,15 @@ function getAdjacentKey(key,dir){
 
 async function loadPlanShift(){
   planD=await loadD(planKey);
-  if(!planD.roads)planD=emptyD();
+  const isNew=!planD.roads;
+  if(isNew)planD=emptyD();
+  // Auto-carry forward handover notes and manager log to new shifts
+  if(isNew||!planD.handover||Object.keys(planD.handover).length===0){
+    if(D.handover)planD.handover=JSON.parse(JSON.stringify(D.handover));
+  }
+  if(isNew||!planD.mgrLog){
+    if(D.mgrLog)planD.mgrLog=D.mgrLog;
+  }
 }
 
 async function switchPlanShift(key){
@@ -2463,9 +2471,19 @@ setInterval(async()=>{
     // If user was viewing the old current shift, switch them to the new one
     if(actKey===oldKey){
       // Load the new shift — it may already have data if it was pre-built
+      const prevD=D;
       actKey=curKey;
       D=await loadD(actKey);
-      if(!D.roads)D=emptyD();
+      const wasNew=!D.roads;
+      if(wasNew)D=emptyD();
+      // Carry forward handover notes and manager log if new shift
+      if(wasNew||!D.handover||Object.keys(D.handover).length===0){
+        if(prevD.handover)D.handover=JSON.parse(JSON.stringify(prevD.handover));
+      }
+      if(wasNew||!D.mgrLog){
+        if(prevD.mgrLog)D.mgrLog=prevD.mgrLog;
+      }
+      if(wasNew)await saveD();
       // If in plan mode, update the plan target to the next shift
       if(planMode){
         planKey=getAdjacentKey(actKey,1);
