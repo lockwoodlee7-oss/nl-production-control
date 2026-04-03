@@ -1618,8 +1618,8 @@ function presentStaff(){
   const sm=D.staffMatrix||{};
   const ta=D.taskAssign||[];
   const BOXES=[
-    {key:'lv4elec',label:'LV4 ELECTRICAL',count:10},
-    {key:'lv4mech',label:'LV4 MECHANICAL',count:10},
+    {key:'lv4elec',label:'LV4 ELEC',count:10},
+    {key:'lv4mech',label:'LV4 MECH',count:10},
     {key:'gwl',label:'GWL',count:5},
     {key:'vb',label:'VB',count:4},
     {key:'lv3',label:'LV3',count:8},
@@ -1634,111 +1634,114 @@ function presentStaff(){
   ];
   const shiftLabel=kLabel(actKey);
   const isDay=kType(actKey)==='day';
-  // Total staff count
   let totalStaff=0;
   roles.forEach(r=>{if(sm[r.key])totalStaff++});
   BOXES.forEach(sb=>{totalStaff+=(sm[sb.key]||[]).filter(v=>v&&v.trim()).length});
+  const activeTasks=ta.filter(t=>t.person||t.task);
 
   let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Staff On Shift \u2014 Neville Hill TCC</title>
+<title>Staff On Shift</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Barlow',sans-serif;background:#0d1017;color:#e2e8f0;min-height:100vh;padding:20px 30px}
-/* Header */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:3px solid #f4793b;margin-bottom:16px}
-.hdr-left{display:flex;align-items:center;gap:12px}
-.logo{width:40px;height:40px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;color:#1a1f3a}
-.hdr h1{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:3px;color:#fff}
-.hdr .sub{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2px;font-family:'Barlow Condensed',sans-serif}
-.hdr-right{text-align:right}
-.hdr-right .shift{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#fff}
-.hdr-right .type{display:inline-block;padding:2px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;margin-top:3px}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Barlow',sans-serif;background:#0d1017;color:#e2e8f0;display:flex;flex-direction:column;padding:12px 20px}
+/* Header bar */
+.hdr{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:3px solid #f4793b;flex-shrink:0}
+.logo{width:34px;height:34px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;color:#1a1f3a;flex-shrink:0}
+.hdr-info{flex:1}
+.hdr-info h1{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:3px;color:#fff;display:inline}
+.hdr-info .sub{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:2px;font-family:'Barlow Condensed',sans-serif;margin-left:10px}
+.hdr-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hdr-right .shift{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#fff}
+.hdr-right .type{padding:2px 8px;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px}
 .type.day{background:rgba(37,99,235,.2);color:#93c5fd}.type.night{background:rgba(124,58,237,.2);color:#c4b5fd}
-.hdr-right .total{font-family:'JetBrains Mono',monospace;font-size:11px;color:#f4793b;margin-top:4px}
-/* Team banner */
-.team-banner{text-align:center;padding:10px;margin-bottom:14px;border-radius:8px;background:rgba(244,121,59,.06);border:1px solid rgba(244,121,59,.2)}
-.team-banner h2{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#f4793b;letter-spacing:3px}
-/* Key roles — horizontal bar */
-.roles{display:flex;gap:8px;margin-bottom:14px}
-.role{flex:1;background:#161b26;border:1px solid #232a38;border-radius:8px;padding:8px 10px;text-align:center}
-.role .rl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:2px}
-.role .rn{font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:#fff}
-/* Grade rows — compact table style */
-.grades{margin-bottom:14px}
-.gr{display:flex;align-items:flex-start;gap:0;margin-bottom:6px;border-radius:6px;overflow:hidden;border:1px solid #232a38}
-.gr-label{width:130px;flex-shrink:0;padding:6px 10px;background:#161b26;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;min-height:34px}
-.gr-label .gc{font-family:'JetBrains Mono',monospace;font-size:10px;color:#f4793b}
-.gr-names{flex:1;display:flex;flex-wrap:wrap;gap:0;min-height:34px}
-.nm{padding:6px 10px;font-size:13px;font-weight:600;color:#e2e8f0;border-left:1px solid #232a38;flex-shrink:0;min-width:90px;display:flex;align-items:center}
-.nm:first-child{border-left:none}
-.nm.empty{color:rgba(255,255,255,.08);font-style:italic;font-size:11px}
-/* Tasks */
-.tasks{padding-top:12px;border-top:1px solid #232a38;margin-top:4px}
-.tasks h3{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:2px;color:#f4793b;margin-bottom:8px}
-.tk{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #1e2530;font-size:13px}
-.tk .tp{font-weight:700;color:#fff;min-width:140px}.tk .td{color:#cbd5e1;flex:1}.tk .ta{color:#f4793b;font-size:11px}
+.hdr-right .total{font-family:'JetBrains Mono',monospace;font-size:10px;color:#f4793b}
+/* Main content — fills remaining space */
+.content{flex:1;display:flex;flex-direction:column;gap:6px;padding-top:8px;min-height:0}
+/* Team + Roles row */
+.top-row{display:flex;gap:8px;flex-shrink:0}
+.team-box{background:rgba(244,121,59,.08);border:1px solid rgba(244,121,59,.25);border-radius:6px;padding:6px 16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.team-box h2{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#f4793b;letter-spacing:3px}
+.role{flex:1;background:#161b26;border:1px solid #232a38;border-radius:6px;padding:5px 8px;text-align:center}
+.role .rl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.3);text-transform:uppercase}
+.role .rn{font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Grades — fills available space */
+.grades{flex:1;display:flex;flex-direction:column;gap:3px;min-height:0;overflow:hidden}
+.gr{display:flex;align-items:stretch;gap:0;border-radius:4px;border:1px solid #232a38;flex-shrink:0}
+.gr-l{width:90px;flex-shrink:0;padding:3px 8px;background:#161b26;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;color:rgba(255,255,255,.4);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.gr-l .gc{font-family:'JetBrains Mono',monospace;font-size:9px;color:#f4793b}
+.gr-n{flex:1;display:flex;flex-wrap:wrap;gap:0}
+.n{padding:3px 8px;font-size:12px;font-weight:600;color:#e2e8f0;border-left:1px solid #232a38;display:flex;align-items:center;white-space:nowrap}
+.n:first-child{border-left:none}
+.gr.empty-gr{opacity:.3}
+.gr.empty-gr .gr-n{padding:3px 8px;font-size:10px;color:rgba(255,255,255,.15)}
+/* Tasks — bottom section */
+.tasks{flex-shrink:0;border-top:1px solid #232a38;padding-top:6px}
+.tasks h3{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:2px;color:#f4793b;margin-bottom:4px}
+.tg{display:flex;flex-wrap:wrap;gap:0}
+.tk{display:flex;gap:6px;padding:2px 10px;font-size:11px;border-right:1px solid #232a38;align-items:center}
+.tk:last-child{border-right:none}
+.tk .tp{font-weight:700;color:#fff}.tk .ta{color:#f4793b;font-size:9px}.tk .td{color:#cbd5e1}
 /* Footer */
-.ft{margin-top:14px;padding-top:8px;border-top:1px solid #232a38;display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.2)}
-.ft .brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:2px}
+.ft{flex-shrink:0;padding-top:4px;border-top:1px solid #1e2530;display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,.15);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
+/* Controls */
+.ctrls{position:fixed;top:8px;right:8px;display:flex;gap:4px;z-index:10}
+.cbtn{padding:4px 10px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;cursor:pointer}.cbtn:hover{border-color:#f4793b;color:#fff}
 /* Light mode */
 body.light{background:#f3f4f8;color:#0f172a}
-body.light .role,.body.light .gr-label{background:#fff;border-color:#dde0e7}body.light .role .rn,.body.light .nm{color:#0f172a}body.light .role .rl,.body.light .gr-label{color:#64748b}
-body.light .gr{border-color:#dde0e7}body.light .nm{border-color:#eef0f4}body.light .tk .tp{color:#0f172a}body.light .tk .td{color:#1e293b}
-body.light .team-banner{background:rgba(244,121,59,.04);border-color:rgba(244,121,59,.15)}
-body.light .hdr h1{color:#1a1f3a}body.light .hdr-right .shift{color:#1a1f3a}body.light .ft{color:rgba(0,0,0,.2)}
-body.light .tasks,.body.light .ft{border-color:#dde0e7}body.light .tk{border-color:#eef0f4}
-/* Controls */
-.ctrls{position:fixed;top:12px;right:12px;display:flex;gap:6px;z-index:10}
-.cbtn{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer}.cbtn:hover{border-color:#f4793b;color:#fff}
-body.light .cbtn{border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.03);color:rgba(0,0,0,.5)}body.light .cbtn:hover{border-color:#f4793b;color:#f4793b}
-@media print{body,body.light{background:#fff!important;color:#000!important;padding:10px}.role,.gr-label{background:#f5f5f5!important;border-color:#ddd!important}.role .rn,.nm,.tk .tp{color:#000!important}.nm{border-color:#eee!important}.ctrls{display:none}}
-@media(max-width:900px){.roles{flex-wrap:wrap}.role{min-width:45%}.gr-label{width:100px;font-size:9px}.nm{min-width:70px;font-size:11px;padding:4px 6px}}
+body.light .role{background:#fff;border-color:#dde0e7}body.light .role .rn{color:#0f172a}body.light .role .rl{color:#64748b}
+body.light .gr{border-color:#dde0e7}body.light .gr-l{background:#fff;color:#64748b;border-color:#dde0e7}body.light .n{color:#0f172a;border-color:#eef0f4}
+body.light .team-box{background:rgba(244,121,59,.04);border-color:rgba(244,121,59,.15)}
+body.light .hdr h1{color:#1a1f3a}body.light .hdr-right .shift{color:#1a1f3a}
+body.light .tk .tp{color:#0f172a}body.light .tk .td{color:#1e293b}
+body.light .tasks{border-color:#dde0e7}body.light .tk{border-color:#eef0f4}body.light .ft{color:rgba(0,0,0,.15);border-color:#dde0e7}
+body.light .cbtn{border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.02);color:rgba(0,0,0,.4)}
+@media print{body,body.light{background:#fff!important;color:#000!important}.role{background:#f8f8f8!important;border-color:#ddd!important}.role .rn,.n,.tk .tp{color:#000!important}.gr-l{background:#f0f0f0!important}.ctrls{display:none}}
 </style></head><body>`;
 
   html+=`<div class="ctrls"><button class="cbtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'Dark':'Light'">Light</button><button class="cbtn" onclick="window.print()">Print</button></div>`;
 
-  html+=`<div class="hdr"><div class="hdr-left"><div class="logo">NL</div><div><h1>STAFF ON SHIFT</h1><div class="sub">NEVILLE HILL \u2014 REPAIR SHED</div></div></div>`;
-  html+=`<div class="hdr-right"><div class="shift">${esc(shiftLabel)}</div><div class="type ${isDay?'day':'night'}">${isDay?'DAY SHIFT':'NIGHT SHIFT'}</div><div class="total">${totalStaff} STAFF ON SHIFT</div></div></div>`;
+  // Header
+  html+=`<div class="hdr"><div class="logo">NL</div><div class="hdr-info"><h1>STAFF ON SHIFT</h1><span class="sub">NEVILLE HILL</span></div>`;
+  html+=`<div class="hdr-right"><span class="shift">${esc(shiftLabel)}</span><span class="type ${isDay?'day':'night'}">${isDay?'DAY':'NIGHT'}</span><span class="total">${totalStaff} staff</span></div></div>`;
 
-  // Team banner
-  if(sm.team)html+=`<div class="team-banner"><h2>${esc(sm.team).toUpperCase()}</h2></div>`;
+  html+=`<div class="content">`;
 
-  // Key roles bar
-  html+=`<div class="roles">`;
+  // Team + Key roles in one row
+  html+=`<div class="top-row">`;
+  if(sm.team)html+=`<div class="team-box"><h2>${esc(sm.team).toUpperCase()}</h2></div>`;
   roles.forEach(r=>{html+=`<div class="role"><div class="rl">${r.label}</div><div class="rn">${esc(sm[r.key]||'\u2014')}</div></div>`});
   html+=`</div>`;
 
-  // Grade rows
+  // All grade rows
   html+=`<div class="grades">`;
   BOXES.forEach(sb=>{
     const arr=sm[sb.key]||[];
     const filled=arr.filter(v=>v&&v.trim()).length;
-    if(filled===0&&sb.count>0){
-      html+=`<div class="gr"><div class="gr-label">${sb.label}<span class="gc">0</span></div><div class="gr-names"><span class="nm empty">—</span></div></div>`;
+    if(filled===0){
+      html+=`<div class="gr empty-gr"><div class="gr-l">${sb.label}<span class="gc">0</span></div><div class="gr-n">\u2014</div></div>`;
       return;
     }
-    html+=`<div class="gr"><div class="gr-label">${sb.label}<span class="gc">${filled}</span></div><div class="gr-names">`;
-    for(let i=0;i<sb.count;i++){
-      const v=arr[i]||'';
-      if(v)html+=`<span class="nm">${esc(v)}</span>`;
-    }
+    html+=`<div class="gr"><div class="gr-l">${sb.label}<span class="gc">${filled}</span></div><div class="gr-n">`;
+    for(let i=0;i<sb.count;i++){const v=arr[i]||'';if(v)html+=`<span class="n">${esc(v)}</span>`}
     html+=`</div></div>`;
   });
   html+=`</div>`;
 
-  // Task assignments
-  const activeTasks=ta.filter(t=>t.person||t.task);
+  // Task assignments — compact inline
   if(activeTasks.length){
-    html+=`<div class="tasks"><h3>TASK ASSIGNMENTS</h3>`;
+    html+=`<div class="tasks"><h3>TASK ASSIGNMENTS (${activeTasks.length})</h3><div class="tg">`;
     activeTasks.forEach(t=>{html+=`<div class="tk"><span class="tp">${esc(t.person||'\u2014')}</span><span class="ta">\u25b6</span><span class="td">${esc(t.task||'\u2014')}</span></div>`});
-    html+=`</div>`;
+    html+=`</div></div>`;
   }
 
-  html+=`<div class="ft"><span>${new Date().toLocaleString('en-GB')}</span><span class="brand">NEVILLE HILL TCC \u2014 PRODUCTION CONTROL</span></div>`;
+  html+=`</div>`; // content
+
+  html+=`<div class="ft"><span>${new Date().toLocaleString('en-GB')}</span><span>NEVILLE HILL TCC \u2014 PRODUCTION CONTROL</span></div>`;
   html+=`</body></html>`;
 
-  const w=window.open('','_blank','width=1200,height=800');
+  const w=window.open('','_blank');
   w.document.write(html);
   w.document.close();
 }
