@@ -914,6 +914,21 @@ async function render(){
   tpl.forEach((sec,i)=>{const val=D.handover?.[sec.label]||'';h+=`<div class="ho-sec"><div class="ho-head"><span class="ho-lbl">${esc(sec.label)}</span>`;if(!sec.def&&ed)h+=`<button class="ho-del" onclick="delHoSec(${i})">&times;</button>`;h+=`</div>`;if(ed)h+=`<textarea class="ho-txt" data-sec="${esc(sec.label)}" oninput="onHo(this)" placeholder="Enter ${esc(sec.label.toLowerCase())} here...">${esc(val)}</textarea>`;else h+=`<textarea class="ho-txt" readonly>${esc(val||'(empty)')}</textarea>`;h+=`</div>`});
   if(ed)h+=`<button class="ho-add" onclick="openHM()">+ ADD SECTION</button>`;h+=`</div></div></div>`;
 
+  // MANAGERS CONFIDENTIAL LOG (password protected)
+  h+=`<div class="panel"><div class="ph coll-toggle" onclick="toggleSection('mgrLog')"><h2>&#128274; Managers Confidential Log</h2><span class="st-arr" id="arr_mgrLog">&#9660;</span></div><div class="coll-body" id="sec_mgrLog"><div class="pb">`;
+  if(mgrUnlocked){
+    if(!D.mgrLog)D.mgrLog='';
+    if(ed){
+      h+=`<textarea class="ho-txt" oninput="D.mgrLog=this.value;autoSNoRender()" placeholder="Confidential notes — only visible to managers with the password..." style="min-height:120px">${esc(D.mgrLog)}</textarea>`;
+    } else {
+      h+=`<textarea class="ho-txt" readonly style="min-height:80px">${esc(D.mgrLog||'(empty)')}</textarea>`;
+    }
+    h+=`<button class="btn btn-x" style="margin-top:8px;font-size:10px" onclick="mgrUnlocked=false;render()">&#128274; Lock</button>`;
+  } else {
+    h+=`<div style="text-align:center;padding:20px"><p style="font-size:13px;color:var(--muted);margin-bottom:10px">This section is password protected</p><div style="display:flex;gap:8px;justify-content:center;max-width:300px;margin:0 auto"><input type="password" class="fi" id="mgrPwInput" placeholder="Enter manager password..." style="flex:1" onkeydown="if(event.key==='Enter')unlockMgrLog()"><button class="btn btn-s" style="font-size:11px" onclick="unlockMgrLog()">Unlock</button></div></div>`;
+  }
+  h+=`</div></div></div>`;
+
   // STAFF MATRIX
   if(!D.staffMatrix)D.staffMatrix={};
   const sm=D.staffMatrix;
@@ -1528,6 +1543,16 @@ function openHM(){document.getElementById('hoModal').classList.add('open');docum
 function closeHM(){document.getElementById('hoModal').classList.remove('open')}
 async function addHoSec(){const name=document.getElementById('hoName').value.trim().toUpperCase();if(!name)return;const tpl=await getHoTpl();if(tpl.find(t=>t.label===name)){alert('Section already exists');return}tpl.push({label:name,def:0});await saveHoTpl(tpl);cachedTpl=tpl;closeHM();await render()}
 async function delHoSec(idx){const tpl=await getHoTpl();if(tpl[idx]?.def)return;if(!confirm('Remove section "'+tpl[idx].label+'"?'))return;tpl.splice(idx,1);await saveHoTpl(tpl);cachedTpl=tpl;await render()}
+
+// MANAGERS CONFIDENTIAL LOG
+let mgrUnlocked=false;
+async function unlockMgrLog(){
+  const pw=document.getElementById('mgrPwInput')?.value||'';
+  const enc=new TextEncoder();
+  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(pw)))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash==='c4fea787d5b3e257b68752b83c4494ec7d26d5f75692b051afa5b6114ef0e3cc'){mgrUnlocked=true;render()}
+  else{alert('Incorrect password')}
+}
 
 // COLLAPSIBLE SECTIONS
 const openSections=new Set();
