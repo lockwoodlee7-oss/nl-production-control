@@ -616,6 +616,10 @@ body.has-announce.plan-mode main{padding-top:214px}
 .mvl-stamp-label .desc { display:block; font-size:10px; color:var(--muted); font-weight:500; margin-top:2px; text-transform:none; letter-spacing:0; }
 .mvl-stamp-time { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--text); text-align:center; padding:6px; background:var(--bg); border:1px solid var(--border); border-radius:4px; }
 .mvl-stamp-time.empty { color:var(--muted); font-style:italic; font-weight:400; }
+.mvl-stamp-input { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:var(--text); text-align:center; padding:8px 6px; background:var(--bg); border:1px solid var(--border); border-radius:4px; outline:none; transition:border-color .15s; cursor:text; }
+.mvl-stamp-input:focus { border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
+.mvl-stamp-input:hover { border-color:#60a5fa; }
+.mvl-stamp-row.stamped .mvl-stamp-input { border-color:var(--green); background:rgba(5,150,105,0.06); }
 .mvl-stamp-btn { padding:7px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; }
 .mvl-stamp-btn:hover { opacity:0.88; }
 .mvl-stamp-btn.clear { background:var(--border); color:var(--text); }
@@ -1596,45 +1600,45 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
 
           <!-- Stamps for OUT -->
           <div class="mvl-stamp-section" id="mvlStampsOut">
-            <h5>&#11014; Move Out — Stage Timestamps</h5>
+            <h5>&#11014; Move Out — Stage Timestamps <span style="font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— click <strong>Stamp Now</strong> for live entry, or type a time directly for retrospective entry</span></h5>
             <div class="mvl-stamp-row" id="mvlRow_readyFromProduction">
               <div class="mvl-stamp-label">1. Ready from Production<span class="desc">Work completed, MTL informed</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_readyFromProduction">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_readyFromProduction" onchange="mvlOnTimeChange('readyFromProduction')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('readyFromProduction')">Stamp Now</button>
             </div>
             <div class="mvl-stamp-row" id="mvlRow_protectionRemoved">
               <div class="mvl-stamp-label">2. Protection Removed<span class="desc">Safety protections lifted</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_protectionRemoved">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_protectionRemoved" onchange="mvlOnTimeChange('protectionRemoved')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('protectionRemoved')">Stamp Now</button>
             </div>
             <div class="mvl-stamp-row" id="mvlRow_movementTakesPlace">
               <div class="mvl-stamp-label">3. Movement Takes Place<span class="desc">MDD on train and moving</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_movementTakesPlace">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_movementTakesPlace" onchange="mvlOnTimeChange('movementTakesPlace')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('movementTakesPlace')">Stamp Now</button>
             </div>
           </div>
 
           <!-- Stamps for IN -->
           <div class="mvl-stamp-section" id="mvlStampsIn" style="display:none;">
-            <h5>&#11015; Move In — Stage Timestamps</h5>
+            <h5>&#11015; Move In — Stage Timestamps <span style="font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">— click <strong>Stamp Now</strong> for live entry, or type a time directly for retrospective entry</span></h5>
             <div class="mvl-stamp-row" id="mvlRow_moveRequested">
               <div class="mvl-stamp-label">1. Move Requested Into Shed<span class="desc">MTL informed</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_moveRequested">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_moveRequested" onchange="mvlOnTimeChange('moveRequested')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('moveRequested')">Stamp Now</button>
             </div>
             <div class="mvl-stamp-row" id="mvlRow_arrivedAtShed">
               <div class="mvl-stamp-label">2. Train Arrived at Shed<span class="desc">MDD hands over to DP</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_arrivedAtShed">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_arrivedAtShed" onchange="mvlOnTimeChange('arrivedAtShed')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('arrivedAtShed')">Stamp Now</button>
             </div>
             <div class="mvl-stamp-row" id="mvlRow_protectionApplied">
               <div class="mvl-stamp-label">3. Protection Applied<span class="desc">Safety protections in place</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_protectionApplied">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_protectionApplied" onchange="mvlOnTimeChange('protectionApplied')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('protectionApplied')">Stamp Now</button>
             </div>
             <div class="mvl-stamp-row" id="mvlRow_handedOver">
               <div class="mvl-stamp-label">4. Handed Over to Production<span class="desc">DP releases unit</span></div>
-              <div class="mvl-stamp-time empty" id="mvlT_handedOver">— : —</div>
+              <input type="time" class="mvl-stamp-input" id="mvlT_handedOver" onchange="mvlOnTimeChange('handedOver')" placeholder="HH:MM">
               <button class="mvl-stamp-btn" onclick="mvlStamp('handedOver')">Stamp Now</button>
             </div>
           </div>
@@ -4208,14 +4212,38 @@ function mvlResetForm() {
 
 function mvlStamp(field) {
     if (!mvlDraft) mvlResetForm();
+    // "Stamp Now" always uses the current real-world time
     const now = new Date();
-    const iso = now.toISOString();
-    mvlDraft[field] = iso;
+    mvlDraft[field] = now.toISOString();
     mvlRenderStamps();
 }
 
+// Manual / retrospective entry — user types HH:MM into the input
+// Combine the typed time with the date selected at the top of the form
+function mvlOnTimeChange(field) {
+    if (!mvlDraft) return;
+    const input = document.getElementById('mvlT_' + field);
+    const row = document.getElementById('mvlRow_' + field);
+    if (!input) return;
+    const v = input.value; // HH:MM (24h) or '' if cleared
+    if (!v) {
+        mvlDraft[field] = '';
+        if (row) row.classList.remove('stamped');
+        return;
+    }
+    // Use the form's date input (the move's date) so retrospective entries
+    // anchor to the right day even if logged days later.
+    const dateStr = document.getElementById('mvlF_date').value || mvlDraft.date || new Date().toISOString().slice(0,10);
+    const [hh, mm] = v.split(':').map(Number);
+    // Build a local-time Date for that date and HH:MM, then store as ISO
+    const [y, mo, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, mo - 1, d, hh, mm, 0, 0);
+    mvlDraft[field] = dt.toISOString();
+    if (row) row.classList.add('stamped');
+}
+
 function mvlFmtTime(iso) {
-    if (!iso) return '— : —';
+    if (!iso) return '';
     const d = new Date(iso);
     return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
@@ -4228,12 +4256,10 @@ function mvlRenderStamps() {
         const row = document.getElementById('mvlRow_' + f);
         if (!el || !row) return;
         if (mvlDraft[f]) {
-            el.textContent = mvlFmtTime(mvlDraft[f]);
-            el.classList.remove('empty');
+            el.value = mvlFmtTime(mvlDraft[f]);
             row.classList.add('stamped');
         } else {
-            el.textContent = '— : —';
-            el.classList.add('empty');
+            el.value = '';
             row.classList.remove('stamped');
         }
     });
