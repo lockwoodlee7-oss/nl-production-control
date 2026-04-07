@@ -632,6 +632,41 @@ body.has-announce.plan-mode main{padding-top:214px}
 .mvl-empty .et { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; color:var(--text); margin-bottom:6px; }
 
 /* ════════════════════════════════════════════════════════════════ */
+/* KIOSK MODE — popup window for live screen display                 */
+/* Activated when URL has ?kiosk=mvlog                               */
+/* Hides handover UI and renders Movement Log full-screen            */
+/* ════════════════════════════════════════════════════════════════ */
+body.kiosk-mvlog .topbar,
+body.kiosk-mvlog .shift-nav,
+body.kiosk-mvlog .search-bar,
+body.kiosk-mvlog .timeline-bar,
+body.kiosk-mvlog main,
+body.kiosk-mvlog .announce-bar { display: none !important; }
+body.kiosk-mvlog #mvlogModalBg.open { display: flex; background: var(--bg); backdrop-filter: none; }
+body.kiosk-mvlog #mvlogModalBg .modal {
+    width: 100vw; max-width: 100vw;
+    height: 100vh; max-height: 100vh;
+    border-radius: 0; box-shadow: none;
+    margin: 0; animation: none;
+}
+body.kiosk-mvlog #mvlogModalBg .mh { background: var(--navy); padding: 10px 18px; }
+body.kiosk-mvlog #mvlogModalBg .mh .mx { display: none; }
+body.kiosk-mvlog #mvlogModalBg .mh::after {
+    content: 'LIVE DISPLAY';
+    margin-left: auto;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fcd34d;
+    letter-spacing: 1.5px;
+    background: rgba(252, 211, 77, 0.12);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(252, 211, 77, 0.3);
+}
+body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow-y: auto; }
+
+/* ════════════════════════════════════════════════════════════════ */
 /* MOBILE / RESPONSIVE LAYER                                         */
 /* Tablets ≤900px · Phones ≤640px · Small phones ≤420px              */
 /* ════════════════════════════════════════════════════════════════ */
@@ -1467,6 +1502,7 @@ body.has-announce.plan-mode main{padding-top:214px}
           <button class="mvl-pbtn" data-period="week" onclick="mvlSetPeriod('week')">This Week</button>
           <button class="mvl-pbtn" data-period="month" onclick="mvlSetPeriod('month')">This Month</button>
           <button class="mvl-pbtn" data-period="all" onclick="mvlSetPeriod('all')">All Time</button>
+          <button class="mvl-export-btn" onclick="mvlImportLegacy()" style="background:#7c3aed;margin-left:0;">&#128194; Import Legacy</button>
           <button class="mvl-export-btn" onclick="mvlExportCSV()">&#128190; Export CSV</button>
         </div>
 
@@ -4037,10 +4073,26 @@ async function mvlInit() {
                 await mvlLoad();
                 if (document.getElementById('mvlogModalBg').classList.contains('open')) {
                     mvlRenderActive();
+                    if (document.getElementById('mvlPanelHistory').classList.contains('active')) {
+                        mvlRenderHistory();
+                    }
                 }
             }
         });
     } catch(e) {}
+
+    // ── KIOSK MODE ── activated by ?kiosk=mvlog
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('kiosk') === 'mvlog') {
+        document.body.classList.add('kiosk-mvlog');
+        document.title = 'Movement Log — Live Display';
+        // Auto-open the movement log modal in kiosk mode
+        setTimeout(() => {
+            document.getElementById('mvlogModalBg').classList.add('open');
+            mvlSetTab('dashboard');
+            mvlRenderActive();
+        }, 100);
+    }
 }
 
 async function mvlLoad() {
@@ -4057,6 +4109,23 @@ async function mvlSave() {
 }
 
 function openMvLog() {
+    // Try to open as a popup window first (so handover and movement log can be used together)
+    const w = window.open('/?kiosk=mvlog', 'mvlog-popup',
+        'width=1320,height=920,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
+    if (w) {
+        try { w.focus(); } catch(e) {}
+        return;
+    }
+    // Popup blocked → fall back to in-page modal
+    document.getElementById('mvlogModalBg').classList.add('open');
+    mvlLoad().then(() => {
+        mvlSetTab('dashboard');
+        mvlRenderActive();
+    });
+}
+
+// Open in-page modal directly (used when popup is blocked or by explicit request)
+function openMvLogModal() {
     document.getElementById('mvlogModalBg').classList.add('open');
     mvlLoad().then(() => {
         mvlSetTab('dashboard');
@@ -4447,6 +4516,84 @@ function mvlRenderHistory() {
 function mvlEscape(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── LEGACY IMPORT — seed data from designated_person_train_movement_log.xlsx
+const MVL_LEGACY_DATA = [
+    { date: 46114, unit: '158792', team: '1 TSS', dir: 'out', stamps: [0.0625, 0.072917, 0.208333], notes: '' },
+    { date: 46114, unit: '150205', team: '2 RS',  dir: 'out', stamps: [0.583333, 0.597222, 0.697917], notes: '' },
+    { date: 46114, unit: '331001', team: '2 RS',  dir: 'in',  stamps: [0.583333, 0.722222, 0.732639, 0.736111], notes: '' },
+    { date: 46114, unit: '158906', team: '3 TSS', dir: 'in',  stamps: [0.291667, 0.423611, 0.430556, 0.4375], notes: 'movements only 2 drivers' },
+    { date: 46114, unit: '150001', team: '3 TSS', dir: 'in',  stamps: [0.291667, 0.416667, 0.430556, 0.4375], notes: 'movements only 2 drivers' },
+    { date: 46114, unit: '158870', team: '3 TSS', dir: 'in',  stamps: [0.291667, 0.416667, 0.430556, 0.4375], notes: 'movements only 2 drivers' },
+    { date: 46114, unit: '331005', team: '2 RS',  dir: 'out', stamps: [0.25, 0.291667, 0.291667], notes: '' },
+    { date: 46114, unit: '331028', team: '2 RS',  dir: 'in',  stamps: [0.291667, 0.354167, 0.354167, 0.354167], notes: '' },
+    { date: 46114, unit: '150002', team: '3 RS',  dir: 'out', stamps: [0.25, 0.291667, 0.333333], notes: '' },
+    { date: 46114, unit: '150228', team: '3 RS',  dir: 'in',  stamps: [0.291667, 0.354167, 0.357639, 0.361111], notes: '' },
+    { date: 46114, unit: '158753', team: '5 RS',  dir: 'out', stamps: [0.25, 0.354167, 0.364583], notes: '' },
+    { date: 46114, unit: '195021', team: '5 RS',  dir: 'in',  stamps: [0.291667, 0.385417, 0.40625, 0.409722], notes: '' },
+    { date: 46114, unit: '150206', team: '5 RS',  dir: 'in',  stamps: [0.291667, 0.402778, 0.40625, 0.409722], notes: '' },
+    { date: 46115, unit: '150006', team: '4 RS',  dir: 'out', stamps: [0.25, 0.322917, 0.326389], notes: '' },
+    { date: 46115, unit: '158871', team: '4 RS',  dir: 'in',  stamps: [0.291667, 0.368056, 0.371528, 0.378472], notes: '' },
+    { date: 46116, unit: '150204', team: '3 RS',  dir: 'in',  stamps: [0.291667, 0.3125, 0.315972, 0.322917], notes: '' },
+];
+
+async function mvlImportLegacy() {
+    if (mvlMoves.some(m => m.id && m.id.indexOf('mv_legacy_') === 0)) {
+        alert('Legacy data has already been imported. Delete existing legacy entries first if you want to re-import.');
+        return;
+    }
+    if (mvlMoves.length > 0) {
+        if (!confirm('You already have ' + mvlMoves.length + ' movement(s) logged. Add ' + MVL_LEGACY_DATA.length + ' legacy entries from the spreadsheet alongside them?')) return;
+    } else {
+        if (!confirm('Import ' + MVL_LEGACY_DATA.length + ' rows from the designated_person_train_movement_log.xlsx spreadsheet?')) return;
+    }
+
+    // Excel serial date → JS Date helper (Excel epoch: 1899-12-30)
+    const serialToDate = (serial) => new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+    const combine = (serial, fraction) => {
+        if (fraction === undefined || fraction === null) return '';
+        const base = serialToDate(serial);
+        return new Date(base.getTime() + fraction * 86400000).toISOString();
+    };
+
+    let added = 0;
+    MVL_LEGACY_DATA.forEach((row, idx) => {
+        const dateStr = serialToDate(row.date).toISOString().slice(0, 10);
+        const m = {
+            id: 'mv_legacy_' + row.date + '_' + row.unit + '_' + idx,
+            date: dateStr,
+            unit: row.unit,
+            shedRoad: row.team,  // original spreadsheet used the team column for shed/road
+            team: row.team,
+            direction: row.dir,
+            notes: row.notes || '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            readyFromProduction: '',
+            protectionRemoved: '',
+            movementTakesPlace: '',
+            moveRequested: '',
+            arrivedAtShed: '',
+            protectionApplied: '',
+            handedOver: '',
+        };
+        if (row.dir === 'out') {
+            m.readyFromProduction = combine(row.date, row.stamps[0]);
+            m.protectionRemoved = combine(row.date, row.stamps[1]);
+            m.movementTakesPlace = combine(row.date, row.stamps[2]);
+        } else {
+            m.moveRequested = combine(row.date, row.stamps[0]);
+            m.arrivedAtShed = combine(row.date, row.stamps[1]);
+            m.protectionApplied = combine(row.date, row.stamps[2]);
+            m.handedOver = combine(row.date, row.stamps[3]);
+        }
+        mvlMoves.push(m);
+        added++;
+    });
+    await mvlSave();
+    mvlSetPeriod('all');
+    alert('✓ Imported ' + added + ' legacy movements from the spreadsheet.\n\nView them in the History tab or set the period filter to "All Time" on the dashboard.');
 }
 
 function mvlExportCSV() {
