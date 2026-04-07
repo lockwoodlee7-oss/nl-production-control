@@ -869,7 +869,8 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
   <span class="conn-status" id="connStatus">&#9679; Live</span>
   <span class="admin-badge" id="adminBadge" style="display:none">ADMIN</span>
   <span class="user-badge" id="userBadge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);padding:4px 10px;background:rgba(255,255,255,0.06);border-radius:5px;letter-spacing:0.5px;text-transform:uppercase;"></span>
-  <button class="tb" id="btnAccount" onclick="openAccount()" style="display:none" title="Account &amp; password">&#128100;</button>
+  <button class="tb" id="btnAccount" onclick="openAccount()" style="display:none" title="Change my password">&#128100; Account</button>
+  <button class="tb" id="btnLogout" onclick="logoutUser()" style="display:none;background:rgba(220,38,38,0.18);color:#fca5a5;font-weight:700;" title="Log out">&#11168; Log Out</button>
   <button class="tb" id="btnAdmin" onclick="openAdmin()" style="display:none">&#9881; Admin</button>
 </div>
 <div class="announce-bar" id="announceBar"><span id="announceMsg"></span></div>
@@ -3464,21 +3465,26 @@ async function checkAdmin(){
     isAdminUser=r&&r.admin;
     document.getElementById('adminBadge').style.display=isAdminUser?'':'none';
     document.getElementById('btnAdmin').style.display=isAdminUser?'':'none';
-    // Show logged-in user name and Account button in topbar
+    // Show logged-in user name, Account, and Logout buttons in the topbar
     const ub=document.getElementById('userBadge');
+    const btnLogout=document.getElementById('btnLogout');
+    const btnAccount=document.getElementById('btnAccount');
     if(ub){
       if(r&&r.authenticated&&r.kind==='user'){
         ub.style.display='';
         ub.textContent=(r.displayName||r.username)+(r.admin?' • ADMIN':'');
-        document.getElementById('btnAccount').style.display='';
+        if(btnAccount)btnAccount.style.display='';
+        if(btnLogout)btnLogout.style.display='';
       } else if(r&&r.authenticated&&r.kind==='legacy'){
         ub.style.display='';
         ub.textContent='Legacy login';
         ub.style.color='#fcd34d';
-        document.getElementById('btnAccount').style.display='none';
+        if(btnAccount)btnAccount.style.display='none';
+        if(btnLogout)btnLogout.style.display='';
       } else {
         ub.style.display='none';
-        document.getElementById('btnAccount').style.display='none';
+        if(btnAccount)btnAccount.style.display='none';
+        if(btnLogout)btnLogout.style.display='none';
       }
     }
     // Force password change on first login
