@@ -411,6 +411,100 @@ body.has-announce.plan-mode main{padding-top:214px}
 .fleet-banner.fb-unknown .fb-class,.fleet-banner.fb-unknown .fb-cars{color:var(--amber-t)}
 .val-msg{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--red);font-weight:700;letter-spacing:.5px;margin-top:4px;display:none}
 .val-msg.show{display:block}
+
+/* ════════════════════════════════════════════════════════════════ */
+/* ESCALATIONS / GOVERNANCE MODULE — scoped to #escModalBg          */
+/* Evidence-based issue review per Kev Gore brief                   */
+/* ════════════════════════════════════════════════════════════════ */
+#escModalBg .modal { width: 1100px; max-width: 96vw; max-height: 92vh; padding: 0; }
+#escModalBg .mh { background: var(--navy); color: #fff; }
+#escModalBg .mh h2 { color: #fff; }
+#escModalBg .mh .mx { color: rgba(255,255,255,0.7); }
+#escModalBg .mh .mx:hover { color: #fff; }
+#escModalBg .mbody { padding: 18px 22px; background: var(--bg); }
+.esc-header-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.esc-header-row h3 { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; color:var(--text); letter-spacing:0.5px; }
+.esc-header-row .esc-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.esc-filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+.esc-fbtn { padding:6px 14px; border:1px solid var(--border); background:var(--card); border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; cursor:pointer; color:var(--muted); transition:all .15s; text-transform:uppercase; letter-spacing:0.6px; }
+.esc-fbtn:hover { border-color:var(--orange); color:var(--orange); }
+.esc-fbtn.active { background:var(--orange); border-color:var(--orange); color:#fff; }
+.esc-search { margin-left:auto; padding:7px 12px; border:1px solid var(--border); border-radius:5px; background:var(--card); color:var(--text); font-family:inherit; font-size:12px; width:220px; }
+.esc-new-btn { padding:8px 16px; background:var(--orange); color:#fff; border:none; border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; cursor:pointer; letter-spacing:0.5px; text-transform:uppercase; }
+.esc-new-btn:hover { opacity:0.88; }
+.esc-status-badge { display:inline-block; padding:3px 9px; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; }
+.esc-st-draft { background:rgba(100,116,139,0.18); color:var(--muted); }
+.esc-st-open { background:rgba(217,119,6,0.18); color:var(--amber); }
+.esc-st-mitigated { background:rgba(5,150,105,0.18); color:var(--green); }
+.esc-st-escalated { background:rgba(220,38,38,0.18); color:var(--red); }
+.esc-ready-badge { display:inline-block; padding:5px 12px; border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; }
+.esc-ready-no { background:rgba(220,38,38,0.12); color:var(--red); border:1px solid rgba(220,38,38,0.3); }
+.esc-ready-yes { background:rgba(5,150,105,0.12); color:var(--green); border:1px solid rgba(5,150,105,0.3); }
+.esc-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+.esc-issue-card { background:var(--card); border:1px solid var(--border); border-left:4px solid var(--border); border-radius:8px; padding:14px 16px; cursor:pointer; transition:all .15s; }
+.esc-issue-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); transform:translateY(-1px); }
+.esc-issue-card.s-open { border-left-color:var(--amber); }
+.esc-issue-card.s-mitigated { border-left-color:var(--green); }
+.esc-issue-card.s-escalated { border-left-color:var(--red); }
+.esc-issue-card.s-draft { border-left-color:var(--muted); }
+.esc-card-ref { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--muted); letter-spacing:0.5px; }
+.esc-card-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin:4px 0 4px 0; line-height:1.3; }
+.esc-card-meta { font-size:11px; color:var(--muted); margin-bottom:8px; }
+.esc-empty { text-align:center; padding:60px 20px; color:var(--muted); background:var(--card); border-radius:8px; border:2px dashed var(--border); grid-column:1/-1; }
+.esc-empty .ei { font-size:36px; margin-bottom:8px; }
+.esc-empty .et { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.esc-progress-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:6px; }
+.esc-progress-fill { height:100%; background:linear-gradient(90deg,var(--orange),#ffa970); transition:width .3s ease; }
+
+/* FORM VIEW */
+#escFormView { display:none; }
+.esc-form-topbar { position:sticky; top:0; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 18px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.05); z-index:50; }
+.esc-form-topbar-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.esc-back-btn { padding:7px 14px; background:var(--bg); border:1px solid var(--border); border-radius:5px; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:11px; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; }
+.esc-back-btn:hover { border-color:var(--orange); color:var(--orange); }
+.esc-meta-block { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.esc-meta-item .lbl { font-family:'Barlow Condensed',sans-serif; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; }
+.esc-meta-item .val { font-size:14px; font-weight:700; color:var(--text); font-family:'JetBrains Mono',monospace; }
+.esc-section-nav { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.esc-section-nav a { padding:4px 9px; background:var(--bg); border-radius:3px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; text-decoration:none; color:var(--text); border:1px solid var(--border); transition:all .15s; text-transform:uppercase; letter-spacing:0.4px; }
+.esc-section-nav a:hover { background:var(--orange); color:#fff; border-color:var(--orange); }
+.esc-section-nav a.locked { opacity:0.4; cursor:not-allowed; }
+.esc-section-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:22px 26px; margin-bottom:14px; position:relative; transition:all .2s; }
+.esc-section-card.locked { opacity:0.5; pointer-events:none; background:var(--bg); }
+.esc-section-card.locked::after { content:'\1F512  Complete Section 4 attestation to unlock'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--text); color:var(--card); padding:9px 16px; border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; pointer-events:none; white-space:nowrap; letter-spacing:0.4px; }
+.esc-sec-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:var(--orange); color:#fff; border-radius:50%; font-size:11px; font-weight:800; margin-right:10px; font-family:'Barlow Condensed',sans-serif; }
+.esc-section-card h3 { margin:0 0 4px 0; font-family:'Barlow Condensed',sans-serif; font-size:16px; color:var(--text); font-weight:800; display:flex; align-items:center; letter-spacing:0.4px; }
+.esc-section-sub { font-size:11px; color:var(--muted); margin-bottom:16px; padding-left:36px; }
+.esc-field { margin-bottom:14px; }
+.esc-field label { display:block; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; }
+.esc-field label .req { color:var(--red); margin-left:3px; }
+.esc-field input[type="text"], .esc-field input[type="date"], .esc-field input[type="number"], .esc-field select, .esc-field textarea {
+    width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:5px;
+    font-family:'Barlow',sans-serif; font-size:13px; color:var(--text); background:var(--bg);
+    box-sizing:border-box; transition:border-color .15s;
+}
+.esc-field input:focus, .esc-field select:focus, .esc-field textarea:focus { outline:none; border-color:var(--orange); }
+.esc-field textarea { resize:vertical; min-height:70px; font-family:'Barlow',sans-serif; }
+.esc-field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.esc-field-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.esc-checks { display:flex; flex-wrap:wrap; gap:6px; }
+.esc-pill { padding:6px 12px; border:1px solid var(--border); border-radius:18px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; cursor:pointer; user-select:none; background:var(--card); color:var(--text2); transition:all .15s; text-transform:uppercase; letter-spacing:0.4px; }
+.esc-pill:hover { border-color:var(--orange); color:var(--orange); }
+.esc-pill.on { background:var(--orange); border-color:var(--orange); color:#fff; }
+.esc-attest-box { background:rgba(217,119,6,0.06); border:2px solid var(--amber); border-radius:8px; padding:18px; margin-top:14px; }
+.esc-attest-box.confirmed { background:rgba(5,150,105,0.06); border-color:var(--green); }
+.esc-attest-title { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.esc-chronology-row { display:grid; grid-template-columns:2fr 1fr 2fr 36px; gap:8px; margin-bottom:8px; align-items:end; }
+.esc-chronology-row button { padding:8px; background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.3); border-radius:5px; cursor:pointer; color:var(--red); font-weight:700; }
+.esc-form-actions { display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+.esc-save-ind { font-size:11px; color:var(--muted); font-style:italic; min-width:140px; }
+@media print {
+    body * { visibility:hidden; }
+    #escPrintArea, #escPrintArea * { visibility:visible; }
+    #escPrintArea { position:absolute; left:0; top:0; width:100%; padding:20px; }
+    .esc-section-card.locked::after { display:none; }
+    .esc-section-card.locked { opacity:1; }
+}
 </style>
 </head>
 <body>
@@ -422,6 +516,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <button class="tb" id="btnPlan" onclick="togglePlanMode()">&#128736; Build Next Shift</button>
   <button class="tb swap-btn" id="btnSwap" onclick="openSwapConfirm()" style="display:none">&#9203; Shift Swapover</button>
   <button class="tb" onclick="openArchive()">&#128193; Archive</button>
+  <button class="tb" onclick="openEscalations()" style="background:rgba(244,121,59,0.15);color:var(--orange);font-weight:700;">&#x26A0; Escalations</button>
   <button class="tb" id="btnDark" onclick="toggleDark()">&#9790; Dark</button>
   <span class="clock" id="clock"></span>
   <span class="shift-pill" id="shiftPill"></span>
@@ -639,6 +734,404 @@ body.has-announce.plan-mode main{padding-top:214px}
 <div class="modal-bg" id="hoModal"><div class="modal" style="width:380px"><div class="mh"><h2>Add Handover Section</h2><button class="mx" onclick="closeHM()">&times;</button></div>
 <div class="mbody"><div class="fg"><label>Section Name</label><input type="text" class="fi" id="hoName" placeholder="e.g. SAFETY, QUALITY" autocomplete="off"></div>
 </div><div class="mf"><button class="btn btn-x" onclick="closeHM()">Cancel</button><button class="btn btn-s" onclick="addHoSec()">Add Section</button></div></div></div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ESCALATIONS / GOVERNANCE MODAL                                    -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="escModalBg">
+  <div class="modal">
+    <div class="mh">
+      <div>
+        <h2>&#x26A0; GOVERNANCE &mdash; ISSUE ESCALATION HUB</h2>
+        <div class="loc">Evidence-based issue review &amp; escalation &mdash; Neville Hill TCC</div>
+      </div>
+      <button class="mx" onclick="closeEscalations()">&times;</button>
+    </div>
+    <div class="mbody">
+
+      <!-- DASHBOARD VIEW -->
+      <div id="escDashboard">
+        <div class="esc-header-row">
+          <div>
+            <h3>Active Escalations</h3>
+            <div class="esc-sub">Ownership attestation is required before any issue can be escalated. Live-synced across all users.</div>
+          </div>
+          <button class="esc-new-btn" onclick="escNewIssue()">+ New Escalation</button>
+        </div>
+
+        <div class="esc-filter-bar">
+          <button class="esc-fbtn active" data-filter="all" onclick="escSetFilter('all')">All</button>
+          <button class="esc-fbtn" data-filter="draft" onclick="escSetFilter('draft')">Draft</button>
+          <button class="esc-fbtn" data-filter="open" onclick="escSetFilter('open')">Open</button>
+          <button class="esc-fbtn" data-filter="mitigated" onclick="escSetFilter('mitigated')">Mitigated</button>
+          <button class="esc-fbtn" data-filter="escalated" onclick="escSetFilter('escalated')">Escalated</button>
+          <input type="text" id="escSearchInput" class="esc-search" placeholder="Search title, area, ref&hellip;" oninput="escRenderDashboard()">
+        </div>
+
+        <div id="escIssueGrid" class="esc-card-grid"></div>
+      </div>
+
+      <!-- FORM VIEW -->
+      <div id="escFormView">
+
+        <div class="esc-form-topbar">
+          <div class="esc-form-topbar-row">
+            <div class="esc-meta-block">
+              <button class="esc-back-btn" onclick="escBackToDashboard()">&larr; Back</button>
+              <div class="esc-meta-item">
+                <div class="lbl">Reference</div>
+                <div class="val" id="escFormRef">&mdash;</div>
+              </div>
+              <div class="esc-meta-item">
+                <div class="lbl">Status</div>
+                <span id="escFormStatus" class="esc-status-badge esc-st-draft" style="margin-top:3px;display:inline-block;">Draft</span>
+              </div>
+              <div class="esc-meta-item">
+                <div class="lbl">Readiness</div>
+                <span id="escFormReady" class="esc-ready-badge esc-ready-no" style="margin-top:3px;display:inline-block;">&#x1F512; Not Ready</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="escSaveInd" class="esc-save-ind">&nbsp;</span>
+              <button class="btn btn-x" onclick="escPrintIssue()">&#x1F5A8; Print/PDF</button>
+              <button class="btn btn-s" onclick="escSubmitIssue()">Submit for Escalation</button>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+              <span>Form Completion</span>
+              <span id="escProgressText">0%</span>
+            </div>
+            <div class="esc-progress-bar"><div id="escProgressFill" class="esc-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="esc-section-nav" id="escSectionNav">
+            <a href="#escSec1">1. Issue</a>
+            <a href="#escSec2">2. Impact</a>
+            <a href="#escSec3">3. Evidence</a>
+            <a href="#escSec4">4. Local Action &amp; Attestation</a>
+            <a href="#escSec5" class="locked">5. Constraint</a>
+            <a href="#escSec6" class="locked">6. Chronology</a>
+            <a href="#escSec7" class="locked">7. Business Case</a>
+            <a href="#escSec8" class="locked">8. Decision</a>
+            <a href="#escSec9" class="locked">9. Risk</a>
+            <a href="#escSec10" class="locked">10. Recommendation</a>
+          </div>
+        </div>
+
+        <div id="escPrintArea">
+
+        <div id="escPrintHeader" style="display:none;margin-bottom:24px;border-bottom:3px solid var(--navy);padding-bottom:14px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Northern Trains &mdash; Neville Hill Train Care Centre</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy);">Issue Escalation &amp; Evidence Pack</div>
+          <div id="escPrintMeta" style="font-size:12px;color:var(--text2);margin-top:6px;"></div>
+        </div>
+
+        <!-- SECTION 1 -->
+        <div class="esc-section-card" id="escSec1">
+          <h3><span class="esc-sec-num">1</span>Issue Identification</h3>
+          <div class="esc-section-sub">Define the issue clearly. What, where, when?</div>
+          <div class="esc-field">
+            <label>Issue Title<span class="req">*</span></label>
+            <input type="text" id="escI_title" placeholder="e.g. Fuel shed capacity constraint impacting weekend availability">
+          </div>
+          <div class="esc-field-row">
+            <div class="esc-field">
+              <label>Area / Function<span class="req">*</span></label>
+              <input type="text" id="escI_area" placeholder="e.g. Fuelling, Cleaning, Exams">
+            </div>
+            <div class="esc-field">
+              <label>First Identified<span class="req">*</span></label>
+              <input type="date" id="escI_firstIdentified">
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Current Status</label>
+            <select id="escI_status">
+              <option value="draft">Draft</option>
+              <option value="open">Open</option>
+              <option value="mitigated">Mitigated locally</option>
+              <option value="escalated">Escalated to business</option>
+            </select>
+          </div>
+          <div class="esc-field">
+            <label>Description<span class="req">*</span></label>
+            <textarea id="escI_description" rows="4" placeholder="Describe the issue in plain terms. What is happening, where, and how often?"></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 2 -->
+        <div class="esc-section-card" id="escSec2">
+          <h3><span class="esc-sec-num">2</span>Impact Assessment</h3>
+          <div class="esc-section-sub">Quantify the operational impact. Hours lost is what gets tracked.</div>
+          <div class="esc-field">
+            <label>Impact Areas (select all that apply)<span class="req">*</span></label>
+            <div class="esc-checks" id="escI_impactFlags">
+              <div class="esc-pill" data-val="availability">Availability</div>
+              <div class="esc-pill" data-val="safety">Safety</div>
+              <div class="esc-pill" data-val="cost">Cost</div>
+              <div class="esc-pill" data-val="quality">Quality</div>
+              <div class="esc-pill" data-val="performance">Performance</div>
+              <div class="esc-pill" data-val="delivery_risk">Delivery Risk</div>
+            </div>
+          </div>
+          <div class="esc-field-row">
+            <div class="esc-field">
+              <label>Hours Lost (per shift / per day)</label>
+              <input type="text" id="escI_hoursLost" placeholder="e.g. 3.5 hrs/shift">
+            </div>
+            <div class="esc-field">
+              <label>Frequency / Trend</label>
+              <input type="text" id="escI_frequencyTrend" placeholder="e.g. Increasing month-on-month">
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Output Impact (units / shifts affected)</label>
+            <textarea id="escI_outputImpact" rows="2" placeholder="e.g. 2 units short on AM peak, 3 days/week"></textarea>
+          </div>
+          <div class="esc-field">
+            <label>Cost Impact (where known)</label>
+            <input type="text" id="escI_costImpact" placeholder="e.g. £6k/week in delay attribution">
+          </div>
+        </div>
+
+        <!-- SECTION 3 -->
+        <div class="esc-section-card" id="escSec3">
+          <h3><span class="esc-sec-num">3</span>Evidence Pack</h3>
+          <div class="esc-section-sub">Cite where the evidence comes from. No opinions &mdash; only data sources.</div>
+          <div class="esc-field">
+            <label>Data Sources Used<span class="req">*</span></label>
+            <div class="esc-checks" id="escI_dataSources">
+              <div class="esc-pill" data-val="shift_logs">Shift Logs</div>
+              <div class="esc-pill" data-val="kpis">KPIs / Reports</div>
+              <div class="esc-pill" data-val="delay_codes">Delay Codes</div>
+              <div class="esc-pill" data-val="work_sampling">Work Sampling</div>
+              <div class="esc-pill" data-val="audit">Audit Findings</div>
+              <div class="esc-pill" data-val="system_data">System Data (Maximo / TRUST)</div>
+              <div class="esc-pill" data-val="other">Other</div>
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Evidence Summary<span class="req">*</span> <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(min 50 chars)</span></label>
+            <textarea id="escI_evidenceSummary" rows="5" placeholder="Summarise the evidence. Link or reference data sources where possible."></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 4: ATTESTATION GATE -->
+        <div class="esc-section-card" id="escSec4">
+          <h3><span class="esc-sec-num">4</span>Local Leadership Action &amp; Ownership Attestation</h3>
+          <div class="esc-section-sub">What have we already done locally? This section MUST be complete before escalation.</div>
+          <div class="esc-field">
+            <label>Actions Already Taken Locally</label>
+            <textarea id="escI_actionsTaken" rows="4" placeholder="What has the local team already tried? List the interventions."></textarea>
+          </div>
+          <div class="esc-field">
+            <label>Leadership Actions Demonstrated</label>
+            <div class="esc-checks" id="escI_leadershipActions">
+              <div class="esc-pill" data-val="manager_presence">Increased Manager Presence on Shift</div>
+              <div class="esc-pill" data-val="planning">Improved Planning / Prioritisation</div>
+              <div class="esc-pill" data-val="local_mitigation">Local Mitigation Implemented</div>
+              <div class="esc-pill" data-val="process_improved">Process Improvement Applied</div>
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Outcomes of Local Actions</label>
+            <textarea id="escI_actionOutcomes" rows="3" placeholder="Did it work? Partial improvement? No effect? Be honest."></textarea>
+          </div>
+          <div class="esc-field">
+            <label>What Remains Within Our Control?</label>
+            <textarea id="escI_remainingControllable" rows="3" placeholder="Honest assessment of what we could still do locally before escalating."></textarea>
+          </div>
+
+          <div class="esc-attest-box" id="escAttestBox">
+            <div class="esc-attest-title">
+              <span id="escAttestIcon">&#x26A0;&#xFE0F;</span>
+              Ownership Attestation &mdash; Required to Unlock Escalation
+            </div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
+              By confirming, I attest that I have personally reviewed this issue, that the local actions described above have been completed,
+              and that the constraints described in sections 5&ndash;10 sit beyond local control. Escalation will not be accepted without this attestation.
+            </div>
+            <div class="esc-field">
+              <label style="display:flex;align-items:center;gap:10px;text-transform:none;font-size:13px;cursor:pointer;letter-spacing:0;color:var(--text);">
+                <input type="checkbox" id="escI_attestConfirmed" onchange="escUpdateAttestation()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--orange);">
+                I confirm ownership attestation
+              </label>
+            </div>
+            <div class="esc-field-row-3">
+              <div class="esc-field">
+                <label>Name<span class="req">*</span></label>
+                <input type="text" id="escI_attestName" placeholder="Full name" oninput="escUpdateAttestation()">
+              </div>
+              <div class="esc-field">
+                <label>Role<span class="req">*</span></label>
+                <input type="text" id="escI_attestRole" placeholder="e.g. TCC Manager" oninput="escUpdateAttestation()">
+              </div>
+              <div class="esc-field">
+                <label>Date<span class="req">*</span></label>
+                <input type="date" id="escI_attestDate" oninput="escUpdateAttestation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5 -->
+        <div class="esc-section-card locked" id="escSec5">
+          <h3><span class="esc-sec-num">5</span>Constraint Description</h3>
+          <div class="esc-section-sub">What is the constraint that sits beyond local control?</div>
+          <div class="esc-field">
+            <label>Constraint Type</label>
+            <div class="esc-checks" id="escI_constraintType">
+              <div class="esc-pill" data-val="infrastructure">Infrastructure / Facilities</div>
+              <div class="esc-pill" data-val="tools_systems">Tools / Systems</div>
+              <div class="esc-pill" data-val="policy">Policy / Process</div>
+              <div class="esc-pill" data-val="approval_funding">Approval / Funding</div>
+              <div class="esc-pill" data-val="external">External (3rd party / supplier)</div>
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Constraint Description<span class="req">*</span> <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(min 30 chars)</span></label>
+            <textarea id="escI_constraintDescription" rows="4" placeholder="Describe the specific constraint, who controls it, and why it cannot be resolved locally."></textarea>
+          </div>
+          <div class="esc-field-row">
+            <div class="esc-field">
+              <label>Time Lost (per shift / week)</label>
+              <input type="text" id="escI_timeLost" placeholder="e.g. 90 mins per AM shift">
+            </div>
+            <div class="esc-field">
+              <label>Operational Impact</label>
+              <input type="text" id="escI_constraintImpact" placeholder="e.g. Delayed PNB, missed first service">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6 -->
+        <div class="esc-section-card locked" id="escSec6">
+          <h3><span class="esc-sec-num">6</span>Chronology of Action</h3>
+          <div class="esc-section-sub">Sequential record of escalation steps already taken.</div>
+          <div id="escChronologyList"></div>
+          <button onclick="escAddChronologyRow()" class="btn btn-x" style="margin-top:8px;">+ Add Entry</button>
+        </div>
+
+        <!-- SECTION 7 -->
+        <div class="esc-section-card locked" id="escSec7">
+          <h3><span class="esc-sec-num">7</span>Business Case Linkage</h3>
+          <div class="esc-section-sub">Is there an existing business case? Link it.</div>
+          <div class="esc-field-row">
+            <div class="esc-field">
+              <label>BC Title</label>
+              <input type="text" id="escI_bcTitle" placeholder="e.g. Fuel Shed Upgrade">
+            </div>
+            <div class="esc-field">
+              <label>BC Reference</label>
+              <input type="text" id="escI_bcReference" placeholder="e.g. NTL-CAPEX-2025-014">
+            </div>
+          </div>
+          <div class="esc-field-row-3">
+            <div class="esc-field">
+              <label>Submitted Date</label>
+              <input type="date" id="escI_bcSubmittedDate">
+            </div>
+            <div class="esc-field">
+              <label>Stage</label>
+              <select id="escI_bcStage">
+                <option value="">&mdash;</option>
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+                <option value="under_review">Under Review</option>
+                <option value="approved">Approved</option>
+                <option value="deferred">Deferred</option>
+              </select>
+            </div>
+            <div class="esc-field">
+              <label>Decision Owner</label>
+              <input type="text" id="escI_bcDecisionOwner" placeholder="e.g. CFO / Engineering Director">
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Operational Impact of Approval Delay</label>
+            <textarea id="escI_bcApprovalDelayImpact" rows="3" placeholder="What is the cost of inaction while waiting for approval?"></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 8 -->
+        <div class="esc-section-card locked" id="escSec8">
+          <h3><span class="esc-sec-num">8</span>Decision Required from Business</h3>
+          <div class="esc-section-sub">Be specific. What does the business need to decide and by when?</div>
+          <div class="esc-field">
+            <label>Decision Type</label>
+            <div class="esc-checks" id="escI_decisionType">
+              <div class="esc-pill" data-val="investment">Investment Approval</div>
+              <div class="esc-pill" data-val="prioritisation">Prioritisation</div>
+              <div class="esc-pill" data-val="policy_exception">Policy Exception</div>
+              <div class="esc-pill" data-val="accelerated_review">Accelerated Review</div>
+            </div>
+          </div>
+          <div class="esc-field">
+            <label>Decision Required By</label>
+            <input type="date" id="escI_decisionRequiredBy">
+          </div>
+          <div class="esc-field">
+            <label>Option 1 (preferred)</label>
+            <textarea id="escI_option1" rows="3" placeholder="Describe the preferred option and its impact."></textarea>
+          </div>
+          <div class="esc-field">
+            <label>Option 2 (alternative)</label>
+            <textarea id="escI_option2" rows="3" placeholder="Describe the alternative option."></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 9 -->
+        <div class="esc-section-card locked" id="escSec9">
+          <h3><span class="esc-sec-num">9</span>Risk Assessment</h3>
+          <div class="esc-section-sub">What is the risk of inaction over time?</div>
+          <div class="esc-field">
+            <label>Short-Term Risk (0&ndash;3 months)</label>
+            <textarea id="escI_riskShortTerm" rows="2"></textarea>
+          </div>
+          <div class="esc-field">
+            <label>Medium-Term Risk (3&ndash;12 months)</label>
+            <textarea id="escI_riskMediumTerm" rows="2"></textarea>
+          </div>
+          <div class="esc-field">
+            <label>Long-Term Risk (12+ months)</label>
+            <textarea id="escI_riskLongTerm" rows="2"></textarea>
+          </div>
+        </div>
+
+        <!-- SECTION 10 -->
+        <div class="esc-section-card locked" id="escSec10">
+          <h3><span class="esc-sec-num">10</span>Recommendation</h3>
+          <div class="esc-section-sub">Clear, fact-based recommendation. This is what gets actioned.</div>
+          <div class="esc-field">
+            <label>Recommendation<span class="req">*</span> <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(min 50 chars)</span></label>
+            <textarea id="escI_recommendation" rows="5" placeholder="Be specific. What should happen next, by whom, and why?"></textarea>
+          </div>
+          <div class="esc-field-row">
+            <div class="esc-field">
+              <label>Accountable Lead</label>
+              <input type="text" id="escI_accountableLead" placeholder="Name of accountable lead">
+            </div>
+            <div class="esc-field">
+              <label>Next Review Date</label>
+              <input type="date" id="escI_nextReviewDate">
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /escPrintArea -->
+
+        <div class="esc-form-actions">
+          <button onclick="escDeleteIssue()" class="btn btn-d">Delete Issue</button>
+          <div style="display:flex;gap:10px;">
+            <button onclick="escBackToDashboard()" class="btn btn-x">Back to Dashboard</button>
+            <button onclick="escSaveIssue(true)" class="btn btn-s">Save</button>
+          </div>
+        </div>
+      </div><!-- /escFormView -->
+
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -2550,7 +3043,474 @@ function initDark(){const pref=localStorage.getItem(LS_DARK);const h=new Date().
 function startClock(){function tick(){const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const p=document.getElementById('shiftPill');if(h>=6&&h<18){p.textContent='DAY';p.className='shift-pill day'}else{p.textContent='NIGHT';p.className='shift-pill night'}}tick();setInterval(tick,1000)}
 
 // INIT
-window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock();checkAdmin()});
+window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock();checkAdmin();escInit()});
+
+// ════════════════════════════════════════════════════════════════
+// ESCALATIONS / GOVERNANCE MODULE
+// Evidence-based issue review per Kev Gore brief
+// Stored in Postgres via /api/config/escalations (uses existing infra)
+// ════════════════════════════════════════════════════════════════
+let escIssues = [];
+let escFilter = 'all';
+let escCurrentId = null;
+let escAutoSaveTimer = null;
+let escListenersBound = false;
+
+async function escInit() {
+    await escLoad();
+    try {
+        socket.on('config-updated', async (msg) => {
+            if (msg && msg.key === 'escalations') {
+                await escLoad();
+                if (document.getElementById('escModalBg').classList.contains('open')) {
+                    if (escCurrentId && document.getElementById('escFormView').style.display !== 'none') {
+                        // form is open — leave the user's edits alone
+                    } else {
+                        escRenderDashboard();
+                    }
+                }
+            }
+        });
+    } catch(e) { console.warn('escInit: socket not available', e); }
+}
+
+async function escLoad() {
+    try {
+        const data = await apiGet('/api/config/escalations');
+        escIssues = (data && Array.isArray(data.issues)) ? data.issues : [];
+    } catch(e) { console.error('escLoad failed:', e); escIssues = []; }
+}
+
+async function escSave() {
+    try {
+        await apiPut('/api/config/escalations', { issues: escIssues });
+    } catch(e) { console.error('escSave failed:', e); }
+}
+
+function escGenerateRef() {
+    const year = new Date().getFullYear();
+    const sameYear = escIssues.filter(i => (i.reference || '').indexOf('-' + year + '-') !== -1);
+    const seq = String(sameYear.length + 1).padStart(3, '0');
+    return 'NL-' + year + '-' + seq;
+}
+
+function openEscalations() {
+    document.getElementById('escModalBg').classList.add('open');
+    document.getElementById('escDashboard').style.display = 'block';
+    document.getElementById('escFormView').style.display = 'none';
+    escCurrentId = null;
+    escLoad().then(() => escRenderDashboard());
+}
+
+function closeEscalations() {
+    if (escCurrentId) escSaveIssue(false);
+    document.getElementById('escModalBg').classList.remove('open');
+    escCurrentId = null;
+}
+
+async function escNewIssue() {
+    const newIssue = {
+        id: 'esc_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        reference: escGenerateRef(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tcc: 'Neville Hill',
+        status: 'draft',
+        title: '', area: '', firstIdentified: '', description: '',
+        impactFlags: [], outputImpact: '', costImpact: '', frequencyTrend: '',
+        hoursLost: '',
+        dataSources: [], evidenceSummary: '',
+        actionsTaken: '', leadershipActions: [], actionOutcomes: '', remainingControllable: '',
+        attestConfirmed: false, attestName: '', attestRole: '', attestDate: '',
+        constraintType: [], constraintDescription: '', timeLost: '', constraintImpact: '',
+        chronology: [],
+        bcTitle: '', bcReference: '', bcSubmittedDate: '', bcStage: '',
+        bcDecisionOwner: '', bcApprovalDelayImpact: '',
+        decisionType: [], decisionRequiredBy: '', option1: '', option2: '',
+        riskShortTerm: '', riskMediumTerm: '', riskLongTerm: '',
+        recommendation: '', accountableLead: '', nextReviewDate: ''
+    };
+    escIssues.push(newIssue);
+    await escSave();
+    escOpenIssue(newIssue.id);
+}
+
+function escOpenIssue(id) {
+    const issue = escIssues.find(i => i.id === id);
+    if (!issue) return;
+    escCurrentId = id;
+    document.getElementById('escDashboard').style.display = 'none';
+    document.getElementById('escFormView').style.display = 'block';
+    escPopulateForm(issue);
+    escRenderChronology(issue);
+    escUpdateAttestation();
+    escUpdateStatusBar();
+    escBindFormListeners();
+}
+
+function escBackToDashboard() {
+    if (escCurrentId) escSaveIssue(false);
+    escCurrentId = null;
+    document.getElementById('escFormView').style.display = 'none';
+    document.getElementById('escDashboard').style.display = 'block';
+    escRenderDashboard();
+}
+
+function escPopulateForm(i) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    const setCheck = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+    document.getElementById('escFormRef').textContent = i.reference || '—';
+    set('escI_title', i.title);
+    set('escI_area', i.area);
+    set('escI_firstIdentified', i.firstIdentified);
+    set('escI_status', i.status);
+    set('escI_description', i.description);
+    set('escI_outputImpact', i.outputImpact);
+    set('escI_hoursLost', i.hoursLost);
+    set('escI_costImpact', i.costImpact);
+    set('escI_frequencyTrend', i.frequencyTrend);
+    set('escI_evidenceSummary', i.evidenceSummary);
+    set('escI_actionsTaken', i.actionsTaken);
+    set('escI_actionOutcomes', i.actionOutcomes);
+    set('escI_remainingControllable', i.remainingControllable);
+    setCheck('escI_attestConfirmed', i.attestConfirmed);
+    set('escI_attestName', i.attestName);
+    set('escI_attestRole', i.attestRole);
+    set('escI_attestDate', i.attestDate);
+    set('escI_constraintDescription', i.constraintDescription);
+    set('escI_timeLost', i.timeLost);
+    set('escI_constraintImpact', i.constraintImpact);
+    set('escI_bcTitle', i.bcTitle);
+    set('escI_bcReference', i.bcReference);
+    set('escI_bcSubmittedDate', i.bcSubmittedDate);
+    set('escI_bcStage', i.bcStage);
+    set('escI_bcDecisionOwner', i.bcDecisionOwner);
+    set('escI_bcApprovalDelayImpact', i.bcApprovalDelayImpact);
+    set('escI_decisionRequiredBy', i.decisionRequiredBy);
+    set('escI_option1', i.option1);
+    set('escI_option2', i.option2);
+    set('escI_riskShortTerm', i.riskShortTerm);
+    set('escI_riskMediumTerm', i.riskMediumTerm);
+    set('escI_riskLongTerm', i.riskLongTerm);
+    set('escI_recommendation', i.recommendation);
+    set('escI_accountableLead', i.accountableLead);
+    set('escI_nextReviewDate', i.nextReviewDate);
+    escSetPills('escI_impactFlags', i.impactFlags);
+    escSetPills('escI_dataSources', i.dataSources);
+    escSetPills('escI_leadershipActions', i.leadershipActions);
+    escSetPills('escI_constraintType', i.constraintType);
+    escSetPills('escI_decisionType', i.decisionType);
+}
+
+function escSetPills(containerId, values) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.esc-pill').forEach(pill => {
+        pill.classList.toggle('on', (values || []).indexOf(pill.dataset.val) !== -1);
+    });
+}
+
+function escGetPills(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.esc-pill.on')).map(p => p.dataset.val);
+}
+
+function escGatherForm() {
+    const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const issue = escIssues.find(i => i.id === escCurrentId);
+    if (!issue) return null;
+    issue.title = get('escI_title').trim();
+    issue.area = get('escI_area').trim();
+    issue.firstIdentified = get('escI_firstIdentified');
+    issue.status = get('escI_status');
+    issue.description = get('escI_description').trim();
+    issue.impactFlags = escGetPills('escI_impactFlags');
+    issue.outputImpact = get('escI_outputImpact').trim();
+    issue.hoursLost = get('escI_hoursLost').trim();
+    issue.costImpact = get('escI_costImpact').trim();
+    issue.frequencyTrend = get('escI_frequencyTrend').trim();
+    issue.dataSources = escGetPills('escI_dataSources');
+    issue.evidenceSummary = get('escI_evidenceSummary').trim();
+    issue.actionsTaken = get('escI_actionsTaken').trim();
+    issue.leadershipActions = escGetPills('escI_leadershipActions');
+    issue.actionOutcomes = get('escI_actionOutcomes').trim();
+    issue.remainingControllable = get('escI_remainingControllable').trim();
+    issue.attestConfirmed = document.getElementById('escI_attestConfirmed').checked;
+    issue.attestName = get('escI_attestName').trim();
+    issue.attestRole = get('escI_attestRole').trim();
+    issue.attestDate = get('escI_attestDate');
+    issue.constraintType = escGetPills('escI_constraintType');
+    issue.constraintDescription = get('escI_constraintDescription').trim();
+    issue.timeLost = get('escI_timeLost').trim();
+    issue.constraintImpact = get('escI_constraintImpact').trim();
+    issue.bcTitle = get('escI_bcTitle').trim();
+    issue.bcReference = get('escI_bcReference').trim();
+    issue.bcSubmittedDate = get('escI_bcSubmittedDate');
+    issue.bcStage = get('escI_bcStage');
+    issue.bcDecisionOwner = get('escI_bcDecisionOwner').trim();
+    issue.bcApprovalDelayImpact = get('escI_bcApprovalDelayImpact').trim();
+    issue.decisionType = escGetPills('escI_decisionType');
+    issue.decisionRequiredBy = get('escI_decisionRequiredBy');
+    issue.option1 = get('escI_option1').trim();
+    issue.option2 = get('escI_option2').trim();
+    issue.riskShortTerm = get('escI_riskShortTerm').trim();
+    issue.riskMediumTerm = get('escI_riskMediumTerm').trim();
+    issue.riskLongTerm = get('escI_riskLongTerm').trim();
+    issue.recommendation = get('escI_recommendation').trim();
+    issue.accountableLead = get('escI_accountableLead').trim();
+    issue.nextReviewDate = get('escI_nextReviewDate');
+    issue.chronology = [];
+    document.querySelectorAll('#escChronologyList .esc-chronology-row').forEach(row => {
+        issue.chronology.push({
+            action: row.querySelector('.chr-action').value.trim(),
+            date: row.querySelector('.chr-date').value,
+            outcome: row.querySelector('.chr-outcome').value.trim()
+        });
+    });
+    issue.updatedAt = new Date().toISOString();
+    return issue;
+}
+
+async function escSaveIssue(showFeedback) {
+    if (!escCurrentId) return;
+    escGatherForm();
+    await escSave();
+    escUpdateStatusBar();
+    if (showFeedback) {
+        const ind = document.getElementById('escSaveInd');
+        if (ind) {
+            ind.textContent = '✓ Saved ' + new Date().toLocaleTimeString();
+            ind.style.color = 'var(--green)';
+            setTimeout(() => { if (ind.textContent.indexOf('Saved') !== -1) ind.textContent = ''; }, 3000);
+        }
+    }
+}
+
+function escUpdateAttestation() {
+    const cb = document.getElementById('escI_attestConfirmed');
+    const name = document.getElementById('escI_attestName');
+    const role = document.getElementById('escI_attestRole');
+    const date = document.getElementById('escI_attestDate');
+    if (!cb) return;
+    const complete = cb.checked && name.value.trim() && role.value.trim() && date.value;
+    const box = document.getElementById('escAttestBox');
+    const icon = document.getElementById('escAttestIcon');
+    if (complete) {
+        box.classList.add('confirmed');
+        icon.textContent = '✓';
+    } else {
+        box.classList.remove('confirmed');
+        icon.textContent = '⚠️';
+    }
+    for (let n = 5; n <= 10; n++) {
+        const sec = document.getElementById('escSec' + n);
+        if (sec) sec.classList.toggle('locked', !complete);
+    }
+    document.querySelectorAll('#escSectionNav a').forEach((a, idx) => {
+        if (idx >= 4) a.classList.toggle('locked', !complete);
+    });
+    escUpdateStatusBar();
+}
+
+function escUpdateStatusBar() {
+    const issue = escIssues.find(i => i.id === escCurrentId);
+    if (!issue) return;
+    escGatherForm();
+    const badge = document.getElementById('escFormStatus');
+    const map = { draft:'Draft', open:'Open', mitigated:'Mitigated', escalated:'Escalated' };
+    badge.textContent = map[issue.status] || 'Draft';
+    badge.className = 'esc-status-badge esc-st-' + (issue.status || 'draft');
+    const ready = escValidate(issue).length === 0;
+    const rb = document.getElementById('escFormReady');
+    rb.textContent = ready ? '✓ Ready to Escalate' : '🔒 Not Ready';
+    rb.className = 'esc-ready-badge ' + (ready ? 'esc-ready-yes' : 'esc-ready-no');
+    const pct = escCalcProgress(issue);
+    document.getElementById('escProgressFill').style.width = pct + '%';
+    document.getElementById('escProgressText').textContent = pct + '%';
+}
+
+function escCalcProgress(i) {
+    const fields = [
+        i.title, i.area, i.firstIdentified, i.description,
+        (i.impactFlags && i.impactFlags.length) ? 'x' : '',
+        (i.dataSources && i.dataSources.length) ? 'x' : '',
+        (i.evidenceSummary && i.evidenceSummary.length >= 50) ? 'x' : '',
+        i.actionsTaken,
+        (i.attestConfirmed && i.attestName && i.attestRole && i.attestDate) ? 'x' : '',
+        (i.constraintDescription && i.constraintDescription.length >= 30) ? 'x' : '',
+        i.option1, i.riskShortTerm,
+        (i.recommendation && i.recommendation.length >= 50) ? 'x' : ''
+    ];
+    const filled = fields.filter(f => f && String(f).trim()).length;
+    return Math.round((filled / fields.length) * 100);
+}
+
+function escValidate(i) {
+    const errors = [];
+    if (!i.title) errors.push('Title is required');
+    if (!i.area) errors.push('Area is required');
+    if (!i.firstIdentified) errors.push('First identified date is required');
+    if (!i.description) errors.push('Description is required');
+    if (!i.impactFlags || i.impactFlags.length === 0) errors.push('At least one impact area required');
+    if (!i.dataSources || i.dataSources.length === 0) errors.push('At least one data source required');
+    if (!i.evidenceSummary || i.evidenceSummary.length < 50) errors.push('Evidence summary needs at least 50 characters');
+    if (!i.attestConfirmed) errors.push('Ownership attestation checkbox not ticked');
+    if (!i.attestName) errors.push('Attestation name missing');
+    if (!i.attestRole) errors.push('Attestation role missing');
+    if (!i.attestDate) errors.push('Attestation date missing');
+    if (!i.constraintDescription || i.constraintDescription.length < 30) errors.push('Constraint description needs at least 30 characters');
+    if (!i.recommendation || i.recommendation.length < 50) errors.push('Recommendation needs at least 50 characters');
+    return errors;
+}
+
+async function escSubmitIssue() {
+    if (!escCurrentId) return;
+    const issue = escGatherForm();
+    const errors = escValidate(issue);
+    if (errors.length > 0) {
+        alert('Escalation rejected: Ownership attestation or required fields not completed.\n\n' + errors.map(e => '• ' + e).join('\n'));
+        return;
+    }
+    issue.status = 'escalated';
+    document.getElementById('escI_status').value = 'escalated';
+    issue.escalatedAt = new Date().toISOString();
+    await escSave();
+    escUpdateStatusBar();
+    alert('✓ Issue ' + issue.reference + ' submitted for escalation.\n\nAll evidence and ownership attestation checks passed.');
+}
+
+async function escDeleteIssue() {
+    if (!escCurrentId) return;
+    if (!confirm('Permanently delete this escalation? This cannot be undone.')) return;
+    escIssues = escIssues.filter(i => i.id !== escCurrentId);
+    await escSave();
+    escCurrentId = null;
+    escBackToDashboard();
+}
+
+function escRenderChronology(issue) {
+    const list = document.getElementById('escChronologyList');
+    if (!list) return;
+    list.innerHTML = '';
+    (issue.chronology || []).forEach(row => escAppendChronologyRow(row));
+    if (!issue.chronology || issue.chronology.length === 0) {
+        escAppendChronologyRow({ action:'', date:'', outcome:'' });
+    }
+}
+
+function escAddChronologyRow() { escAppendChronologyRow({ action:'', date:'', outcome:'' }); }
+
+function escAppendChronologyRow(row) {
+    const list = document.getElementById('escChronologyList');
+    if (!list) return;
+    const div = document.createElement('div');
+    div.className = 'esc-chronology-row';
+    div.innerHTML =
+        '<div><label>Action</label><input type="text" class="chr-action" value="' + (row.action||'').replace(/"/g,'&quot;') + '" placeholder="What was done"></div>' +
+        '<div><label>Date</label><input type="date" class="chr-date" value="' + (row.date||'') + '"></div>' +
+        '<div><label>Outcome</label><input type="text" class="chr-outcome" value="' + (row.outcome||'').replace(/"/g,'&quot;') + '" placeholder="Result"></div>' +
+        '<button onclick="this.parentElement.remove();escMarkDirty()" title="Remove row">×</button>';
+    // apply esc-field input styling to chronology inputs
+    div.querySelectorAll('input').forEach(el => {
+        el.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px;background:var(--bg);color:var(--text);box-sizing:border-box;';
+    });
+    div.querySelectorAll('label').forEach(el => {
+        el.style.cssText = 'display:block;font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;';
+    });
+    list.appendChild(div);
+}
+
+function escSetFilter(f) {
+    escFilter = f;
+    document.querySelectorAll('#escDashboard .esc-fbtn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === f);
+    });
+    escRenderDashboard();
+}
+
+function escRenderDashboard() {
+    const grid = document.getElementById('escIssueGrid');
+    if (!grid) return;
+    const searchEl = document.getElementById('escSearchInput');
+    const search = (searchEl ? searchEl.value : '').toLowerCase().trim();
+    let list = escIssues.slice().sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+    if (escFilter !== 'all') list = list.filter(i => (i.status || 'draft') === escFilter);
+    if (search) list = list.filter(i =>
+        (i.title || '').toLowerCase().indexOf(search) !== -1 ||
+        (i.area || '').toLowerCase().indexOf(search) !== -1 ||
+        (i.reference || '').toLowerCase().indexOf(search) !== -1
+    );
+    if (list.length === 0) {
+        grid.innerHTML = '<div class="esc-empty"><div class="ei">📋</div><div class="et">No escalations yet</div><div style="font-size:12px;">Click <strong>+ New Escalation</strong> to log your first evidence-based issue.</div></div>';
+        return;
+    }
+    grid.innerHTML = list.map(i => {
+        const status = i.status || 'draft';
+        const statusLabel = ({ draft:'Draft', open:'Open', mitigated:'Mitigated', escalated:'Escalated' })[status];
+        const ready = escValidate(i).length === 0;
+        const pct = escCalcProgress(i);
+        const hl = i.hoursLost ? ' · <strong>' + escEsc(i.hoursLost) + 'h lost</strong>' : '';
+        return '<div class="esc-issue-card s-' + status + '" onclick="escOpenIssue(\'' + i.id + '\')">' +
+            '<div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">' +
+                '<span class="esc-card-ref">' + (i.reference||'—') + '</span>' +
+                '<span class="esc-status-badge esc-st-' + status + '">' + statusLabel + '</span>' +
+            '</div>' +
+            '<div class="esc-card-title">' + (escEsc(i.title) || '<em style="color:var(--muted);font-weight:400;">Untitled</em>') + '</div>' +
+            '<div class="esc-card-meta">' + (escEsc(i.area) || '—') + hl + '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);font-family:Barlow Condensed,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">' +
+                '<span>' + pct + '% complete</span>' +
+                '<span>' + (ready ? '<span style="color:var(--green)">✓ Ready</span>' : '<span style="color:var(--red)">🔒 Not ready</span>') + '</span>' +
+            '</div>' +
+            '<div class="esc-progress-bar"><div class="esc-progress-fill" style="width:' + pct + '%;"></div></div>' +
+        '</div>';
+    }).join('');
+}
+
+function escEsc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escPrintIssue() {
+    if (!escCurrentId) return;
+    escSaveIssue(false);
+    const issue = escIssues.find(i => i.id === escCurrentId);
+    if (!issue) return;
+    const header = document.getElementById('escPrintHeader');
+    const meta = document.getElementById('escPrintMeta');
+    meta.innerHTML = '<strong>Reference:</strong> ' + escEsc(issue.reference) +
+        ' &nbsp;|&nbsp; <strong>Status:</strong> ' + escEsc(issue.status) +
+        ' &nbsp;|&nbsp; <strong>Generated:</strong> ' + new Date().toLocaleString() +
+        (issue.tcc ? ' &nbsp;|&nbsp; <strong>Depot:</strong> ' + escEsc(issue.tcc) : '');
+    header.style.display = 'block';
+    window.print();
+    setTimeout(() => { header.style.display = 'none'; }, 800);
+}
+
+function escMarkDirty() {
+    if (!escCurrentId) return;
+    const ind = document.getElementById('escSaveInd');
+    if (ind) { ind.textContent = '● Editing…'; ind.style.color = 'var(--amber)'; }
+    clearTimeout(escAutoSaveTimer);
+    escAutoSaveTimer = setTimeout(() => { escSaveIssue(true); }, 1500);
+}
+
+function escBindFormListeners() {
+    if (escListenersBound) return;
+    escListenersBound = true;
+    document.querySelectorAll('#escFormView .esc-pill').forEach(pill => {
+        pill.addEventListener('click', function() {
+            if (pill.closest('.esc-section-card.locked')) return;
+            pill.classList.toggle('on');
+            escMarkDirty();
+        });
+    });
+    document.querySelectorAll('#escFormView input, #escFormView select, #escFormView textarea').forEach(el => {
+        el.addEventListener('input', escMarkDirty);
+        el.addEventListener('change', escMarkDirty);
+    });
+}
 </script>
 </body>
 </html>
