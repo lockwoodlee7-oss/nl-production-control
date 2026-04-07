@@ -82,6 +82,15 @@ ${error ? `<div class="err">${error}</div>` : ''}
 }
 
 app.use(checkAuth);
+
+// Disable caching on all /api/* responses so browsers can never serve stale data
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ═══ INIT DB ═══

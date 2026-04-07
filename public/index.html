@@ -1714,11 +1714,35 @@ socket.on('shift-updated',async(msg)=>{
   if(msg.key===actKey){const d=await loadD(actKey);if(d){D=d;await render()}}
   if(planMode&&msg.key===planKey){planD=await loadD(planKey);if(!planD.roads)planD=emptyD();await render()}
 });
-socket.on('config-updated',async()=>{cachedLinks=null;cachedTpl=null;await render()});
+socket.on('config-updated',async(msg)=>{
+  cachedLinks=null;cachedTpl=null;
+  // Refresh movement log data on every config change so all clients stay in sync
+  // even if the modal isn't currently open
+  if(msg&&msg.key==='movement-log'&&typeof mvlLoad==='function'){
+    await mvlLoad();
+    if(typeof mvlRenderActive==='function'&&document.getElementById('mvlogModalBg')?.classList.contains('open')){
+      mvlRenderActive();
+      if(document.getElementById('mvlPanelHistory')?.classList.contains('active')&&typeof mvlRenderHistory==='function')mvlRenderHistory();
+    }
+  }
+  await render();
+});
 
 // ═══ API LAYER ═══
-async function apiGet(url){const r=await fetch(url);return r.ok?await r.json():null}
-async function apiPut(url,body){await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
+// cache:'no-store' prevents browsers serving stale API responses (was causing
+// users to see out-of-date config data even after Socket.IO refresh signals).
+async function apiGet(url){
+  try{
+    const r=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+    return r.ok?await r.json():null;
+  }catch(e){console.error('apiGet failed:',url,e);return null}
+}
+// Throw on non-OK so silent save failures are surfaced (was hiding auth errors etc).
+async function apiPut(url,body){
+  const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+  if(!r.ok){const text=await r.text().catch(()=>'');throw new Error('PUT '+url+' failed: '+r.status+' '+text)}
+  return r;
+}
 
 function sType(d){d=d||new Date();return d.getHours()>=6&&d.getHours()<18?'DAY':'NIGHT'}
 function mkKey(ds,t){return'nlHub_low_'+ds+'_'+t}
@@ -4128,7 +4152,11 @@ async function mvlLoad() {
 async function mvlSave() {
     try {
         await apiPut('/api/config/movement-log', { moves: mvlMoves });
-    } catch(e) { console.error('mvlSave failed:', e); }
+    } catch(e) {
+        console.error('mvlSave failed:', e);
+        alert('Save failed — your changes were NOT persisted to the server.\n\nError: ' + e.message + '\n\nCheck your connection and try again.');
+        throw e;
+    }
 }
 
 function openMvLog() {
