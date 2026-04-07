@@ -2285,12 +2285,15 @@ function handleAwaitingDrop(awIdx,dst){
     bd.journey.push({location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed back into '+newLoc});
   } else {
     // Fresh entry from awaiting data (no previous bay data)
+    // Default sched_release to 8 hours from arrival so required field isn't blank
+    const defaultArr=aw.arrtime||now;
+    const defaultSR=aw.estComplete||new Date(new Date(defaultArr).getTime()+8*3600000).toISOString();
     bd={
-      unit:aw.unit,vehicle:'',leadVeh:'',exam:'',
-      worktype:aw.reason||'',team:aw.owner||'',staffcount:'',
+      unit:aw.unit,vehicle:'',leadVeh:'',exam:'TBC',
+      worktype:aw.reason||'Other',team:aw.owner||'',staffcount:'',
       priority:'P3',status:'10%',reason:'',
-      arrtime:aw.arrtime||now,sched_release:aw.estComplete||'',est_release:aw.estComplete||'',
-      comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||''),
+      arrtime:defaultArr,sched_release:defaultSR,est_release:aw.estComplete||defaultSR,
+      comments:aw.notes?aw.notes:'From awaiting: '+(aw.update||aw.reason||'Placed from awaiting list'),
       thirdParty:false,isolated:false,trades:{},
       journey:[{location:'Awaiting: '+(aw.currentLoc||'On site'),status:'Awaiting',timestamp:now,notes:'Placed from awaiting attention list into '+newLoc}]
     };
@@ -2466,20 +2469,37 @@ function openBM(type,id,bay,isPlan){
 function closeBM(){document.getElementById('bayModal').classList.remove('open');aRef=null}
 function saveBay(){
   if(!aRef)return;
+  // Hoist targetD to the top of the function so the multi-car road
+  // validation block below can reference it without a TDZ ReferenceError.
+  const targetD=aRef.isPlan?planD:D;
   // Validate all required fields
   let valid=true;
+  const missing=[];
+  const FIELD_LABELS={fUnit:'Unit Number',fExam:'Exam Number',fPri:'Priority',fStat:'Status',fArr:'Arrival Time',fSR:'Sched Release',fCom:'Comments / Work Required'};
   REQUIRED_FIELDS.forEach(id=>{
     const el=document.getElementById(id);
     const val=el.value.trim();
-    if(!val||val==='\u2014'){el.classList.add('invalid');valid=false}
+    if(!val||val==='\u2014'){el.classList.add('invalid');valid=false;missing.push(FIELD_LABELS[id]||id)}
     else{el.classList.remove('invalid')}
   });
   // Validate work type checkboxes
   const wtChecked=[...document.querySelectorAll('#fWtChecks input:checked')];
-  if(!wtChecked.length){valid=false;document.getElementById('fWtChecks').style.outline='2px solid var(--red)';document.getElementById('fWtChecks').style.borderRadius='6px'}
+  if(!wtChecked.length){valid=false;document.getElementById('fWtChecks').style.outline='2px solid var(--red)';document.getElementById('fWtChecks').style.borderRadius='6px';missing.push('Work Type')}
   else{document.getElementById('fWtChecks').style.outline=''}
-  if(!valid){document.getElementById('valMsg').classList.add('show');return}
+  if(!valid){
+    const msg=document.getElementById('valMsg');
+    msg.textContent='Cannot save \u2014 missing: '+missing.join(', ');
+    msg.classList.add('show');
+    // Scroll the first invalid field into view so the user can SEE what's blocking
+    const firstInvalid=document.querySelector('#bayModal .fi.invalid')||document.getElementById('fWtChecks');
+    if(firstInvalid){
+      firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(()=>{try{firstInvalid.focus()}catch(e){}},300);
+    }
+    return;
+  }
   document.getElementById('valMsg').classList.remove('show');
+  document.getElementById('valMsg').textContent='All fields marked must be completed before saving';
 
   const u=document.getElementById('fUnit').value.trim();
   // Check bay span fits
@@ -2519,8 +2539,7 @@ function saveBay(){
     asst:{req:document.getElementById('trAsst').value,done:document.getElementById('trAsstDone').checked},
     tp:{req:document.getElementById('trTP').value,done:document.getElementById('trTPDone').checked}
   };
-  // Preserve existing journey history
-  const targetD=aRef.isPlan?planD:D;
+  // Preserve existing journey history (targetD already hoisted to top of saveBay)
   const existingBay=getStore(targetD,type)[id]?.[bay];
   const existingJourney=existingBay?.journey||[];
   const selWts=[...document.querySelectorAll('#fWtChecks input:checked')].map(c=>c.value).join(', ');
