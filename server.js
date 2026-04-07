@@ -238,10 +238,12 @@ app.post('/login', express.urlencoded({ extended: false }), async (req, res) => 
       return res.redirect('/');
     }
 
-    // No existing user — only INITIAL_PASSWORD allows self-registration
+    // No existing user — only INITIAL_PASSWORD allows self-registration.
+    // Deliberately VAGUE error message so we don't leak the initial password
+    // to anyone stumbling across the login page.
     if (pw !== INITIAL_PASSWORD) {
       noteFailedLogin(lockKey);
-      return res.send(loginPage('User not found for clock card ' + clockCardRaw + '. New users: enter the initial password (' + INITIAL_PASSWORD + ') and you will be set up automatically.'));
+      return res.send(loginPage('Login failed. Check your details and try again. If you do not have an account, contact Lee.'));
     }
 
     // Self-register
@@ -280,22 +282,19 @@ function loginPage(error) {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Barlow Condensed',sans-serif;background:#0d1017;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.box{background:#161b26;border:1px solid #232a38;border-radius:14px;padding:34px 38px;width:440px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.head{text-align:center;margin-bottom:20px}
+.box{background:#161b26;border:1px solid #232a38;border-radius:14px;padding:34px 38px;width:420px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.head{text-align:center;margin-bottom:22px}
 .logo{width:60px;height:60px;background:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#1a1f3a;margin-bottom:14px}
 h1{color:#fff;font-size:20px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
-.sub{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:1.5px;margin-bottom:6px}
-.intro{color:rgba(255,255,255,.55);font-size:11px;font-family:'Barlow',sans-serif;line-height:1.55;background:rgba(244,121,59,0.07);border:1px solid rgba(244,121,59,0.2);padding:10px 12px;border-radius:6px;margin-bottom:14px}
-.intro strong{color:#f4793b}
-label{display:block;color:rgba(255,255,255,.5);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;margin-top:8px;font-family:'Barlow Condensed',sans-serif}
+.sub{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:1.5px}
+label{display:block;color:rgba(255,255,255,.5);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;margin-top:10px;font-family:'Barlow Condensed',sans-serif}
 input{width:100%;padding:11px 14px;border-radius:8px;border:1px solid #232a38;background:#0d1017;color:#e2e8f0;font-family:'Barlow',sans-serif;font-size:14px;outline:none}
 input:focus{border-color:#f4793b}
 input.mono{font-family:'JetBrains Mono',monospace;letter-spacing:1px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-button{width:100%;padding:13px;border-radius:8px;border:none;background:#f4793b;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.5px;cursor:pointer;margin-top:18px;text-transform:uppercase}
+button{width:100%;padding:13px;border-radius:8px;border:none;background:#f4793b;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.5px;cursor:pointer;margin-top:20px;text-transform:uppercase}
 button:hover{opacity:.88}
 .err{color:#fca5a5;font-size:12px;margin-bottom:12px;font-weight:600;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:10px 12px;font-family:'Barlow',sans-serif;line-height:1.5}
-.hint{color:rgba(255,255,255,.4);font-size:10px;margin-top:14px;font-family:'Barlow',sans-serif;line-height:1.5;text-align:center}
 </style></head><body>
 <div class="box">
 <div class="head">
@@ -303,29 +302,24 @@ button:hover{opacity:.88}
 <h1>PRODUCTION CONTROL</h1>
 <div class="sub">NEVILLE HILL — REPAIR SHED OPERATIONS</div>
 </div>
-<div class="intro">
-<strong>First time?</strong> Enter your details below with the initial password <strong>${INITIAL_PASSWORD}</strong>. The system will create your account and ask you to set a personal password.<br><br>
-<strong>Already registered?</strong> Enter your details with the password you set last time.
-</div>
 ${error ? `<div class="err">${error}</div>` : ''}
 <form method="POST" action="/login" autocomplete="off">
 <div class="row">
 <div>
 <label>First Name</label>
-<input type="text" name="firstName" placeholder="e.g. Lee" autocomplete="given-name" autofocus required>
+<input type="text" name="firstName" autocomplete="given-name" autofocus required>
 </div>
 <div>
 <label>Last Name</label>
-<input type="text" name="lastName" placeholder="e.g. Lockwood" autocomplete="family-name" required>
+<input type="text" name="lastName" autocomplete="family-name" required>
 </div>
 </div>
 <label>Clock Card Number</label>
-<input type="text" name="clockCard" class="mono" placeholder="e.g. 12345" autocomplete="username" required>
+<input type="text" name="clockCard" class="mono" autocomplete="username" required>
 <label>Password</label>
-<input type="password" name="password" placeholder="Your password (or initial: ${INITIAL_PASSWORD})" autocomplete="current-password" required>
+<input type="password" name="password" autocomplete="current-password" required>
 <button type="submit">LOG IN</button>
 </form>
-<div class="hint">Forgotten your password? Ask Lee to reset it.</div>
 </div></body></html>`;
 }
 
