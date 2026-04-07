@@ -505,6 +505,131 @@ body.has-announce.plan-mode main{padding-top:214px}
     .esc-section-card.locked::after { display:none; }
     .esc-section-card.locked { opacity:1; }
 }
+
+/* ════════════════════════════════════════════════════════════════ */
+/* MOVEMENT LOG / DESIGNATED PERSON TRACKER                          */
+/* Replaces designated_person_train_movement_log.xlsx                */
+/* ════════════════════════════════════════════════════════════════ */
+#mvlogModalBg .modal { width: 1240px; max-width: 97vw; max-height: 94vh; padding: 0; }
+#mvlogModalBg .mh { background: var(--navy); color: #fff; }
+#mvlogModalBg .mh h2 { color: #fff; }
+#mvlogModalBg .mh .mx { color: rgba(255,255,255,0.7); }
+#mvlogModalBg .mh .mx:hover { color: #fff; }
+#mvlogModalBg .mbody { padding: 0; background: var(--bg); }
+
+/* Tab bar inside the modal */
+.mvl-tabs { display:flex; background:var(--card); border-bottom:1px solid var(--border); padding:0 22px; }
+.mvl-tab { padding:14px 22px; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; color:var(--muted); background:none; border:none; border-bottom:3px solid transparent; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:0.6px; }
+.mvl-tab:hover { color:var(--text); }
+.mvl-tab.active { color:#60a5fa; border-bottom-color:#60a5fa; }
+.mvl-tab .badge { display:inline-block; background:var(--orange); color:#fff; font-size:10px; padding:2px 7px; border-radius:10px; margin-left:6px; font-weight:700; vertical-align:middle; }
+.mvl-panel { display:none; padding:20px 22px; }
+.mvl-panel.active { display:block; }
+
+/* Headline KPI cards (dashboard) */
+.mvl-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+.mvl-kpi { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; position:relative; overflow:hidden; }
+.mvl-kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--orange); }
+.mvl-kpi.k-blue::before { background:#2563eb; }
+.mvl-kpi.k-amber::before { background:var(--amber); }
+.mvl-kpi.k-red::before { background:var(--red); }
+.mvl-kpi.k-green::before { background:var(--green); }
+.mvl-kpi .lbl { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.mvl-kpi .num { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:800; color:var(--text); line-height:1; }
+.mvl-kpi .sub { font-size:11px; color:var(--muted); margin-top:6px; }
+
+/* Period filter */
+.mvl-period-bar { display:flex; gap:8px; margin-bottom:18px; align-items:center; flex-wrap:wrap; }
+.mvl-pbtn { padding:7px 16px; border:1px solid var(--border); background:var(--card); border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:800; cursor:pointer; color:var(--muted); transition:all .15s; text-transform:uppercase; letter-spacing:0.6px; }
+.mvl-pbtn:hover { border-color:#2563eb; color:#2563eb; }
+.mvl-pbtn.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+.mvl-export-btn { margin-left:auto; padding:8px 16px; background:var(--green); color:#fff; border:none; border-radius:5px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; }
+.mvl-export-btn:hover { opacity:0.88; }
+
+/* Chart + breakdown layout */
+.mvl-chart-grid { display:grid; grid-template-columns:1.2fr 1.6fr; gap:16px; margin-bottom:18px; }
+.mvl-chart-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:20px; }
+.mvl-chart-card h4 { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+.mvl-chart-card h4 .total { font-size:11px; color:var(--muted); font-weight:700; }
+.mvl-donut-wrap { display:flex; align-items:center; gap:18px; }
+.mvl-donut { flex-shrink:0; }
+.mvl-donut-center { font-family:'Barlow Condensed',sans-serif; font-weight:800; }
+.mvl-donut-center .v { font-size:30px; fill:var(--text); }
+.mvl-donut-center .l { font-size:9px; fill:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.mvl-legend { flex:1; display:flex; flex-direction:column; gap:8px; }
+.mvl-legend-row { display:flex; align-items:center; gap:10px; font-size:12px; }
+.mvl-legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+.mvl-legend-row .name { flex:1; color:var(--text); font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:12px; }
+.mvl-legend-row .pct { color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; min-width:42px; text-align:right; }
+
+/* Stage breakdown bars */
+.mvl-stage-bars { display:flex; flex-direction:column; gap:10px; }
+.mvl-stage-row { display:grid; grid-template-columns:1.6fr 60px 1fr; gap:10px; align-items:center; font-size:12px; }
+.mvl-stage-row .name { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--text); }
+.mvl-stage-row .val { font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--text); text-align:right; font-size:13px; }
+.mvl-bar-track { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.mvl-bar-fill { height:100%; background:linear-gradient(90deg,#2563eb,#60a5fa); border-radius:4px; }
+
+/* Active moves list (dashboard) */
+.mvl-active-section h4 { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }
+.mvl-active-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }
+.mvl-move-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px; cursor:pointer; transition:all .15s; border-left:4px solid var(--border); }
+.mvl-move-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); transform:translateY(-1px); }
+.mvl-move-card.dir-out { border-left-color:#2563eb; }
+.mvl-move-card.dir-in { border-left-color:var(--orange); }
+.mvl-move-card.complete { opacity:0.65; }
+.mvl-move-card .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.mvl-move-card .unit { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:var(--text); }
+.mvl-move-card .dir-pill { padding:2px 8px; border-radius:3px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; }
+.mvl-move-card .dir-pill.out { background:rgba(37,99,235,0.15); color:#2563eb; }
+.mvl-move-card .dir-pill.in { background:rgba(244,121,59,0.15); color:var(--orange); }
+.mvl-move-card .meta { font-size:11px; color:var(--muted); margin-bottom:10px; }
+.mvl-stage-pills { display:flex; gap:3px; margin-bottom:8px; }
+.mvl-spill { flex:1; height:18px; background:var(--border); border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--muted); font-weight:700; font-family:'Barlow Condensed',sans-serif; transition:all .15s; }
+.mvl-spill.done { background:var(--green); color:#fff; }
+.mvl-spill.current { background:var(--amber); color:#fff; animation:mvlPulse 1.5s ease-in-out infinite; }
+@keyframes mvlPulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+.mvl-move-card .delay-line { font-size:11px; color:var(--muted); }
+.mvl-move-card .delay-line strong { color:var(--red); font-family:'JetBrains Mono',monospace; }
+
+/* Add Move form */
+.mvl-form-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:22px 26px; }
+.mvl-form-card h4 { font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:14px; }
+.mvl-direction-toggle { display:flex; gap:10px; margin-bottom:18px; }
+.mvl-dir-btn { flex:1; padding:14px; border:2px solid var(--border); background:var(--bg); border-radius:8px; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:0.8px; transition:all .15s; }
+.mvl-dir-btn:hover { border-color:#2563eb; }
+.mvl-dir-btn.active.out { border-color:#2563eb; background:rgba(37,99,235,0.08); color:#2563eb; }
+.mvl-dir-btn.active.in { border-color:var(--orange); background:rgba(244,121,59,0.08); color:var(--orange); }
+.mvl-form-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+.mvl-form-field label { display:block; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; }
+.mvl-form-field input, .mvl-form-field select, .mvl-form-field textarea {
+    width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:5px;
+    font-family:'Barlow',sans-serif; font-size:13px; color:var(--text); background:var(--bg);
+    box-sizing:border-box;
+}
+.mvl-form-field input:focus, .mvl-form-field select:focus, .mvl-form-field textarea:focus { outline:none; border-color:#2563eb; }
+.mvl-stamp-section { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:18px; margin-top:14px; }
+.mvl-stamp-section h5 { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
+.mvl-stamp-row { display:grid; grid-template-columns:1fr 110px 110px; gap:10px; align-items:center; margin-bottom:10px; padding:10px; background:var(--card); border-radius:6px; border:1px solid var(--border); }
+.mvl-stamp-row.stamped { border-color:var(--green); background:rgba(5,150,105,0.04); }
+.mvl-stamp-label { font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; color:var(--text); }
+.mvl-stamp-label .desc { display:block; font-size:10px; color:var(--muted); font-weight:500; margin-top:2px; text-transform:none; letter-spacing:0; }
+.mvl-stamp-time { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--text); text-align:center; padding:6px; background:var(--bg); border:1px solid var(--border); border-radius:4px; }
+.mvl-stamp-time.empty { color:var(--muted); font-style:italic; font-weight:400; }
+.mvl-stamp-btn { padding:7px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; }
+.mvl-stamp-btn:hover { opacity:0.88; }
+.mvl-stamp-btn.clear { background:var(--border); color:var(--text); }
+
+/* History table */
+.mvl-history-table { width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden; border-collapse:collapse; font-size:12px; }
+.mvl-history-table th { background:var(--bg); padding:10px 12px; text-align:left; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid var(--border); }
+.mvl-history-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); }
+.mvl-history-table td.mono { font-family:'JetBrains Mono',monospace; font-weight:600; }
+.mvl-history-table tr:hover td { background:var(--bg); cursor:pointer; }
+.mvl-history-table tr:last-child td { border-bottom:none; }
+.mvl-empty { text-align:center; padding:60px 20px; color:var(--muted); background:var(--card); border-radius:10px; border:2px dashed var(--border); }
+.mvl-empty .ei { font-size:42px; margin-bottom:10px; }
+.mvl-empty .et { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:800; color:var(--text); margin-bottom:6px; }
 </style>
 </head>
 <body>
@@ -514,6 +639,7 @@ body.has-announce.plan-mode main{padding-top:214px}
   <div class="undo-redo"><button class="ur-btn" id="btnUndo" onclick="undo()" disabled title="Undo">&#8630;</button><button class="ur-btn" id="btnRedo" onclick="redo()" disabled title="Redo">&#8631;</button></div>
   <div class="tsp"></div>
   <button class="tb" id="btnPlan" onclick="togglePlanMode()">&#128736; Build Next Shift</button>
+  <button class="tb" onclick="openMvLog()" style="background:rgba(37,99,235,0.18);color:#60a5fa;font-weight:700;">&#128642; Movement Log</button>
   <button class="tb swap-btn" id="btnSwap" onclick="openSwapConfirm()" style="display:none">&#9203; Shift Swapover</button>
   <button class="tb" onclick="openArchive()">&#128193; Archive</button>
   <button class="tb" onclick="openEscalations()" style="background:rgba(244,121,59,0.15);color:var(--orange);font-weight:700;">&#x26A0; Escalations</button>
@@ -1128,6 +1254,194 @@ body.has-announce.plan-mode main{padding-top:214px}
           </div>
         </div>
       </div><!-- /escFormView -->
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- MOVEMENT LOG MODAL                                                -->
+<!-- Designated Person Train Movement Tracker                          -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="mvlogModalBg">
+  <div class="modal">
+    <div class="mh">
+      <div>
+        <h2>&#128642; TRAIN MOVEMENT LOG &mdash; DESIGNATED PERSON</h2>
+        <div class="loc">Tracking time lost on train movements &mdash; data for the staffing business case</div>
+      </div>
+      <button class="mx" onclick="closeMvLog()">&times;</button>
+    </div>
+    <div class="mbody">
+
+      <div class="mvl-tabs">
+        <button class="mvl-tab active" data-mvltab="dashboard" onclick="mvlSetTab('dashboard')">&#128202; Dashboard</button>
+        <button class="mvl-tab" data-mvltab="add" onclick="mvlSetTab('add')">+ Log Movement</button>
+        <button class="mvl-tab" data-mvltab="history" onclick="mvlSetTab('history')">&#128196; History <span id="mvlHistoryBadge" class="badge" style="display:none">0</span></button>
+      </div>
+
+      <!-- ── DASHBOARD TAB ───────────────────────────────────── -->
+      <div class="mvl-panel active" id="mvlPanelDashboard">
+
+        <div class="mvl-period-bar">
+          <button class="mvl-pbtn active" data-period="today" onclick="mvlSetPeriod('today')">Today</button>
+          <button class="mvl-pbtn" data-period="week" onclick="mvlSetPeriod('week')">This Week</button>
+          <button class="mvl-pbtn" data-period="month" onclick="mvlSetPeriod('month')">This Month</button>
+          <button class="mvl-pbtn" data-period="all" onclick="mvlSetPeriod('all')">All Time</button>
+          <button class="mvl-export-btn" onclick="mvlExportCSV()">&#128190; Export CSV</button>
+        </div>
+
+        <div class="mvl-kpi-row">
+          <div class="mvl-kpi k-blue">
+            <div class="lbl">Total Moves Logged</div>
+            <div class="num" id="mvlKpiTotal">0</div>
+            <div class="sub" id="mvlKpiTotalSub">in selected period</div>
+          </div>
+          <div class="mvl-kpi k-amber">
+            <div class="lbl">Total Hours Lost</div>
+            <div class="num" id="mvlKpiHours">0.0</div>
+            <div class="sub">cumulative delay across all stages</div>
+          </div>
+          <div class="mvl-kpi k-red">
+            <div class="lbl">Avg Delay per Move</div>
+            <div class="num" id="mvlKpiAvg">0</div>
+            <div class="sub">minutes per movement</div>
+          </div>
+          <div class="mvl-kpi k-green">
+            <div class="lbl">Equivalent Cost</div>
+            <div class="num" id="mvlKpiCost">£0</div>
+            <div class="sub">at &pound;35/hr (configurable)</div>
+          </div>
+        </div>
+
+        <div class="mvl-chart-grid">
+          <div class="mvl-chart-card">
+            <h4>Where Time Is Being Lost <span class="total" id="mvlChartTotal">0.0 hrs total</span></h4>
+            <div class="mvl-donut-wrap">
+              <svg class="mvl-donut" id="mvlDonut" width="180" height="180" viewBox="0 0 180 180"></svg>
+              <div class="mvl-legend" id="mvlLegend"></div>
+            </div>
+          </div>
+          <div class="mvl-chart-card">
+            <h4>Stage Delay Breakdown <span class="total">average minutes</span></h4>
+            <div class="mvl-stage-bars" id="mvlStageBars"></div>
+          </div>
+        </div>
+
+        <div class="mvl-active-section">
+          <h4>Recent Movements</h4>
+          <div class="mvl-active-grid" id="mvlActiveGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- ── ADD MOVEMENT TAB ────────────────────────────────── -->
+      <div class="mvl-panel" id="mvlPanelAdd">
+        <div class="mvl-form-card">
+          <h4>Log a New Movement</h4>
+
+          <div class="mvl-direction-toggle">
+            <button class="mvl-dir-btn out active" data-dir="out" onclick="mvlSetDirection('out')">&#11014; MOVE OUT (Shed &rarr; Yard)</button>
+            <button class="mvl-dir-btn in" data-dir="in" onclick="mvlSetDirection('in')">&#11015; MOVE IN (Yard &rarr; Shed)</button>
+          </div>
+
+          <div class="mvl-form-row">
+            <div class="mvl-form-field">
+              <label>Date</label>
+              <input type="date" id="mvlF_date">
+            </div>
+            <div class="mvl-form-field">
+              <label>Unit / Train ID</label>
+              <input type="text" id="mvlF_unit" placeholder="e.g. 333010">
+            </div>
+            <div class="mvl-form-field">
+              <label>Shed and Road</label>
+              <input type="text" id="mvlF_shedRoad" placeholder="e.g. 1 RS, 2 TSS">
+            </div>
+          </div>
+          <div class="mvl-form-row">
+            <div class="mvl-form-field">
+              <label>Designated Person Team</label>
+              <select id="mvlF_team">
+                <option value="">— Select —</option>
+                <option value="1 TSS">1 TSS</option>
+                <option value="2 RS">2 RS</option>
+                <option value="3 TSS">3 TSS</option>
+                <option value="3 RS">3 RS</option>
+                <option value="4 RS">4 RS</option>
+                <option value="5 RS">5 RS</option>
+                <option value="2 drivers only">Movements only — 2 drivers</option>
+              </select>
+            </div>
+            <div class="mvl-form-field" style="grid-column:span 2;">
+              <label>Notes / Reason for Delay</label>
+              <input type="text" id="mvlF_notes" placeholder="e.g. Awaiting MTL, no driver available, road congested...">
+            </div>
+          </div>
+
+          <!-- Stamps for OUT -->
+          <div class="mvl-stamp-section" id="mvlStampsOut">
+            <h5>&#11014; Move Out — Stage Timestamps</h5>
+            <div class="mvl-stamp-row" id="mvlRow_readyFromProduction">
+              <div class="mvl-stamp-label">1. Ready from Production<span class="desc">Work completed, MTL informed</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_readyFromProduction">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('readyFromProduction')">Stamp Now</button>
+            </div>
+            <div class="mvl-stamp-row" id="mvlRow_protectionRemoved">
+              <div class="mvl-stamp-label">2. Protection Removed<span class="desc">Safety protections lifted</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_protectionRemoved">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('protectionRemoved')">Stamp Now</button>
+            </div>
+            <div class="mvl-stamp-row" id="mvlRow_movementTakesPlace">
+              <div class="mvl-stamp-label">3. Movement Takes Place<span class="desc">MDD on train and moving</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_movementTakesPlace">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('movementTakesPlace')">Stamp Now</button>
+            </div>
+          </div>
+
+          <!-- Stamps for IN -->
+          <div class="mvl-stamp-section" id="mvlStampsIn" style="display:none;">
+            <h5>&#11015; Move In — Stage Timestamps</h5>
+            <div class="mvl-stamp-row" id="mvlRow_moveRequested">
+              <div class="mvl-stamp-label">1. Move Requested Into Shed<span class="desc">MTL informed</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_moveRequested">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('moveRequested')">Stamp Now</button>
+            </div>
+            <div class="mvl-stamp-row" id="mvlRow_arrivedAtShed">
+              <div class="mvl-stamp-label">2. Train Arrived at Shed<span class="desc">MDD hands over to DP</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_arrivedAtShed">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('arrivedAtShed')">Stamp Now</button>
+            </div>
+            <div class="mvl-stamp-row" id="mvlRow_protectionApplied">
+              <div class="mvl-stamp-label">3. Protection Applied<span class="desc">Safety protections in place</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_protectionApplied">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('protectionApplied')">Stamp Now</button>
+            </div>
+            <div class="mvl-stamp-row" id="mvlRow_handedOver">
+              <div class="mvl-stamp-label">4. Handed Over to Production<span class="desc">DP releases unit</span></div>
+              <div class="mvl-stamp-time empty" id="mvlT_handedOver">— : —</div>
+              <button class="mvl-stamp-btn" onclick="mvlStamp('handedOver')">Stamp Now</button>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+            <button class="btn btn-x" onclick="mvlResetForm()">Clear Form</button>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-x" onclick="mvlSetTab('dashboard')">Cancel</button>
+              <button class="btn btn-s" onclick="mvlSaveMove()">Save Movement</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY TAB ─────────────────────────────────────── -->
+      <div class="mvl-panel" id="mvlPanelHistory">
+        <div class="mvl-period-bar">
+          <input type="text" id="mvlHistorySearch" placeholder="Search unit, road, team, notes..." oninput="mvlRenderHistory()" style="padding:8px 12px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text);font-family:inherit;font-size:13px;width:280px;">
+          <button class="mvl-export-btn" style="margin-left:auto;" onclick="mvlExportCSV()">&#128190; Export CSV</button>
+        </div>
+        <div id="mvlHistoryWrap"></div>
+      </div>
 
     </div>
   </div>
@@ -3043,7 +3357,7 @@ function initDark(){const pref=localStorage.getItem(LS_DARK);const h=new Date().
 function startClock(){function tick(){const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const p=document.getElementById('shiftPill');if(h>=6&&h<18){p.textContent='DAY';p.className='shift-pill day'}else{p.textContent='NIGHT';p.className='shift-pill night'}}tick();setInterval(tick,1000)}
 
 // INIT
-window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock();checkAdmin();escInit()});
+window.addEventListener('DOMContentLoaded',async()=>{await fleetReady;curKey=getCurKey();actKey=curKey;D=await loadD(actKey);if(!D.roads)D=emptyD();initDark();await render();startClock();checkAdmin();escInit();mvlInit()});
 
 // ════════════════════════════════════════════════════════════════
 // ESCALATIONS / GOVERNANCE MODULE
@@ -3510,6 +3824,477 @@ function escBindFormListeners() {
         el.addEventListener('input', escMarkDirty);
         el.addEventListener('change', escMarkDirty);
     });
+}
+
+// ════════════════════════════════════════════════════════════════
+// MOVEMENT LOG / DESIGNATED PERSON TRACKER
+// Replaces designated_person_train_movement_log.xlsx
+// ════════════════════════════════════════════════════════════════
+let mvlMoves = [];
+let mvlPeriod = 'today';
+let mvlDirection = 'out';
+let mvlDraft = null; // current in-progress move being built
+const MVL_HOURLY_RATE = 35; // £/hr — used for cost equivalent
+
+// Stage colour palette for chart/legend
+const MVL_STAGE_META = {
+    out: [
+        { key: 'd1_out', name: 'Ready → Protection Removed', color: '#2563eb' },
+        { key: 'd2_out', name: 'Protection Removed → Movement', color: '#60a5fa' },
+    ],
+    in: [
+        { key: 'd1_in', name: 'Requested → Arrived', color: '#f4793b' },
+        { key: 'd2_in', name: 'Arrived → Protection Applied', color: '#fbbf24' },
+        { key: 'd3_in', name: 'Protection Applied → Handed Over', color: '#fb7185' },
+    ]
+};
+const MVL_ALL_STAGES = [...MVL_STAGE_META.out, ...MVL_STAGE_META.in];
+
+async function mvlInit() {
+    await mvlLoad();
+    try {
+        socket.on('config-updated', async (msg) => {
+            if (msg && msg.key === 'movement-log') {
+                await mvlLoad();
+                if (document.getElementById('mvlogModalBg').classList.contains('open')) {
+                    mvlRenderActive();
+                }
+            }
+        });
+    } catch(e) {}
+}
+
+async function mvlLoad() {
+    try {
+        const data = await apiGet('/api/config/movement-log');
+        mvlMoves = (data && Array.isArray(data.moves)) ? data.moves : [];
+    } catch(e) { console.error('mvlLoad failed:', e); mvlMoves = []; }
+}
+
+async function mvlSave() {
+    try {
+        await apiPut('/api/config/movement-log', { moves: mvlMoves });
+    } catch(e) { console.error('mvlSave failed:', e); }
+}
+
+function openMvLog() {
+    document.getElementById('mvlogModalBg').classList.add('open');
+    mvlLoad().then(() => {
+        mvlSetTab('dashboard');
+        mvlRenderActive();
+    });
+}
+
+function closeMvLog() {
+    document.getElementById('mvlogModalBg').classList.remove('open');
+}
+
+function mvlSetTab(tab) {
+    document.querySelectorAll('.mvl-tab').forEach(b => b.classList.toggle('active', b.dataset.mvltab === tab));
+    document.querySelectorAll('.mvl-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('mvlPanel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    if (tab === 'dashboard') mvlRenderActive();
+    if (tab === 'add') { if (!mvlDraft) mvlResetForm(); else mvlRenderStamps(); }
+    if (tab === 'history') mvlRenderHistory();
+}
+
+function mvlSetPeriod(p) {
+    mvlPeriod = p;
+    document.querySelectorAll('.mvl-pbtn').forEach(b => b.classList.toggle('active', b.dataset.period === p));
+    mvlRenderActive();
+}
+
+function mvlSetDirection(dir) {
+    mvlDirection = dir;
+    document.querySelectorAll('.mvl-dir-btn').forEach(b => b.classList.toggle('active', b.dataset.dir === dir));
+    document.getElementById('mvlStampsOut').style.display = dir === 'out' ? 'block' : 'none';
+    document.getElementById('mvlStampsIn').style.display = dir === 'in' ? 'block' : 'none';
+    if (mvlDraft) mvlDraft.direction = dir;
+}
+
+function mvlResetForm() {
+    mvlDraft = {
+        id: 'mv_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        date: new Date().toISOString().slice(0,10),
+        unit: '',
+        shedRoad: '',
+        team: '',
+        direction: mvlDirection,
+        notes: '',
+        readyFromProduction: '',
+        protectionRemoved: '',
+        movementTakesPlace: '',
+        moveRequested: '',
+        arrivedAtShed: '',
+        protectionApplied: '',
+        handedOver: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    };
+    document.getElementById('mvlF_date').value = mvlDraft.date;
+    document.getElementById('mvlF_unit').value = '';
+    document.getElementById('mvlF_shedRoad').value = '';
+    document.getElementById('mvlF_team').value = '';
+    document.getElementById('mvlF_notes').value = '';
+    mvlRenderStamps();
+}
+
+function mvlStamp(field) {
+    if (!mvlDraft) mvlResetForm();
+    const now = new Date();
+    const iso = now.toISOString();
+    mvlDraft[field] = iso;
+    mvlRenderStamps();
+}
+
+function mvlFmtTime(iso) {
+    if (!iso) return '— : —';
+    const d = new Date(iso);
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function mvlRenderStamps() {
+    if (!mvlDraft) return;
+    const fields = ['readyFromProduction','protectionRemoved','movementTakesPlace','moveRequested','arrivedAtShed','protectionApplied','handedOver'];
+    fields.forEach(f => {
+        const el = document.getElementById('mvlT_' + f);
+        const row = document.getElementById('mvlRow_' + f);
+        if (!el || !row) return;
+        if (mvlDraft[f]) {
+            el.textContent = mvlFmtTime(mvlDraft[f]);
+            el.classList.remove('empty');
+            row.classList.add('stamped');
+        } else {
+            el.textContent = '— : —';
+            el.classList.add('empty');
+            row.classList.remove('stamped');
+        }
+    });
+}
+
+async function mvlSaveMove() {
+    if (!mvlDraft) { alert('Nothing to save.'); return; }
+    // gather form fields
+    mvlDraft.date = document.getElementById('mvlF_date').value;
+    mvlDraft.unit = document.getElementById('mvlF_unit').value.trim();
+    mvlDraft.shedRoad = document.getElementById('mvlF_shedRoad').value.trim();
+    mvlDraft.team = document.getElementById('mvlF_team').value;
+    mvlDraft.notes = document.getElementById('mvlF_notes').value.trim();
+    mvlDraft.direction = mvlDirection;
+    mvlDraft.updatedAt = new Date().toISOString();
+
+    if (!mvlDraft.unit) { alert('Please enter a Unit / Train ID.'); return; }
+    if (!mvlDraft.shedRoad) { alert('Please enter Shed and Road.'); return; }
+
+    // Update if exists, else push
+    const idx = mvlMoves.findIndex(m => m.id === mvlDraft.id);
+    if (idx >= 0) mvlMoves[idx] = mvlDraft;
+    else mvlMoves.push(mvlDraft);
+    await mvlSave();
+    mvlDraft = null;
+    mvlSetTab('dashboard');
+}
+
+function mvlEditMove(id) {
+    const m = mvlMoves.find(x => x.id === id);
+    if (!m) return;
+    mvlDraft = JSON.parse(JSON.stringify(m));
+    mvlDirection = m.direction || 'out';
+    mvlSetTab('add');
+    mvlSetDirection(mvlDirection);
+    document.getElementById('mvlF_date').value = mvlDraft.date || '';
+    document.getElementById('mvlF_unit').value = mvlDraft.unit || '';
+    document.getElementById('mvlF_shedRoad').value = mvlDraft.shedRoad || '';
+    document.getElementById('mvlF_team').value = mvlDraft.team || '';
+    document.getElementById('mvlF_notes').value = mvlDraft.notes || '';
+    mvlRenderStamps();
+}
+
+async function mvlDeleteMove(id, ev) {
+    if (ev) ev.stopPropagation();
+    if (!confirm('Delete this movement record?')) return;
+    mvlMoves = mvlMoves.filter(m => m.id !== id);
+    await mvlSave();
+    mvlRenderActive();
+    mvlRenderHistory();
+}
+
+// ── Calculations ──
+function mvlMinsBetween(a, b) {
+    if (!a || !b) return 0;
+    const diff = (new Date(b).getTime() - new Date(a).getTime()) / 60000;
+    return diff > 0 ? diff : 0;
+}
+
+function mvlMoveDelays(m) {
+    return {
+        d1_out: m.direction === 'out' ? mvlMinsBetween(m.readyFromProduction, m.protectionRemoved) : 0,
+        d2_out: m.direction === 'out' ? mvlMinsBetween(m.protectionRemoved, m.movementTakesPlace) : 0,
+        d1_in:  m.direction === 'in'  ? mvlMinsBetween(m.moveRequested, m.arrivedAtShed) : 0,
+        d2_in:  m.direction === 'in'  ? mvlMinsBetween(m.arrivedAtShed, m.protectionApplied) : 0,
+        d3_in:  m.direction === 'in'  ? mvlMinsBetween(m.protectionApplied, m.handedOver) : 0,
+    };
+}
+
+function mvlMoveTotalMins(m) {
+    const d = mvlMoveDelays(m);
+    return d.d1_out + d.d2_out + d.d1_in + d.d2_in + d.d3_in;
+}
+
+function mvlFilterByPeriod(moves) {
+    const now = new Date();
+    if (mvlPeriod === 'all') return moves;
+    if (mvlPeriod === 'today') {
+        const today = now.toISOString().slice(0,10);
+        return moves.filter(m => m.date === today);
+    }
+    if (mvlPeriod === 'week') {
+        const wkAgo = new Date(now.getTime() - 7*24*60*60*1000);
+        return moves.filter(m => new Date(m.date) >= wkAgo);
+    }
+    if (mvlPeriod === 'month') {
+        const mAgo = new Date(now.getTime() - 30*24*60*60*1000);
+        return moves.filter(m => new Date(m.date) >= mAgo);
+    }
+    return moves;
+}
+
+function mvlRenderActive() {
+    const filtered = mvlFilterByPeriod(mvlMoves);
+
+    // KPIs
+    const totalMins = filtered.reduce((s, m) => s + mvlMoveTotalMins(m), 0);
+    const totalHours = totalMins / 60;
+    const avgMins = filtered.length > 0 ? Math.round(totalMins / filtered.length) : 0;
+    const cost = totalHours * MVL_HOURLY_RATE;
+
+    document.getElementById('mvlKpiTotal').textContent = filtered.length;
+    document.getElementById('mvlKpiTotalSub').textContent =
+        mvlPeriod === 'today' ? 'today' :
+        mvlPeriod === 'week' ? 'last 7 days' :
+        mvlPeriod === 'month' ? 'last 30 days' : 'all time';
+    document.getElementById('mvlKpiHours').textContent = totalHours.toFixed(1);
+    document.getElementById('mvlKpiAvg').textContent = avgMins;
+    document.getElementById('mvlKpiCost').textContent = '£' + Math.round(cost).toLocaleString();
+
+    // Aggregate stage delays for chart
+    const stageTotals = {};
+    MVL_ALL_STAGES.forEach(s => stageTotals[s.key] = 0);
+    filtered.forEach(m => {
+        const d = mvlMoveDelays(m);
+        Object.keys(d).forEach(k => { stageTotals[k] += d[k]; });
+    });
+
+    document.getElementById('mvlChartTotal').textContent = totalHours.toFixed(1) + ' hrs total';
+    mvlRenderDonut(stageTotals);
+    mvlRenderStageBars(filtered);
+    mvlRenderRecentMoves(filtered);
+
+    // Update history badge
+    const badge = document.getElementById('mvlHistoryBadge');
+    if (badge) {
+        badge.textContent = mvlMoves.length;
+        badge.style.display = mvlMoves.length > 0 ? '' : 'none';
+    }
+}
+
+function mvlRenderDonut(stageTotals) {
+    const svg = document.getElementById('mvlDonut');
+    if (!svg) return;
+    const total = Object.values(stageTotals).reduce((a,b) => a+b, 0);
+    const cx = 90, cy = 90, r = 65, stroke = 22;
+    const circ = 2 * Math.PI * r;
+
+    svg.innerHTML = '';
+
+    if (total === 0) {
+        // empty state ring
+        svg.innerHTML =
+            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="var(--border)" stroke-width="' + stroke + '"/>' +
+            '<text x="' + cx + '" y="' + (cy-2) + '" text-anchor="middle" class="v">0.0</text>' +
+            '<text x="' + cx + '" y="' + (cy+16) + '" text-anchor="middle" class="l">hours lost</text>';
+        // empty legend
+        const lg = document.getElementById('mvlLegend');
+        lg.innerHTML = '<div style="color:var(--muted);font-size:12px;font-style:italic;">No data for this period.</div>';
+        return;
+    }
+
+    let offset = 0;
+    MVL_ALL_STAGES.forEach(stage => {
+        const v = stageTotals[stage.key] || 0;
+        if (v <= 0) return;
+        const frac = v / total;
+        const len = frac * circ;
+        const dasharray = len + ' ' + (circ - len);
+        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx', cx);
+        c.setAttribute('cy', cy);
+        c.setAttribute('r', r);
+        c.setAttribute('fill', 'none');
+        c.setAttribute('stroke', stage.color);
+        c.setAttribute('stroke-width', stroke);
+        c.setAttribute('stroke-dasharray', dasharray);
+        c.setAttribute('stroke-dashoffset', -offset);
+        c.setAttribute('transform', 'rotate(-90 ' + cx + ' ' + cy + ')');
+        svg.appendChild(c);
+        offset += len;
+    });
+
+    // Center text
+    const t1 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t1.setAttribute('x', cx); t1.setAttribute('y', cy-2); t1.setAttribute('text-anchor','middle');
+    t1.setAttribute('class','v'); t1.textContent = (total/60).toFixed(1);
+    svg.appendChild(t1);
+    const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t2.setAttribute('x', cx); t2.setAttribute('y', cy+16); t2.setAttribute('text-anchor','middle');
+    t2.setAttribute('class','l'); t2.textContent = 'hours lost';
+    svg.appendChild(t2);
+
+    // Legend
+    const lg = document.getElementById('mvlLegend');
+    lg.innerHTML = MVL_ALL_STAGES.filter(s => stageTotals[s.key] > 0).map(s => {
+        const v = stageTotals[s.key];
+        const pct = total > 0 ? Math.round((v/total) * 100) : 0;
+        return '<div class="mvl-legend-row">' +
+            '<div class="mvl-legend-dot" style="background:' + s.color + ';"></div>' +
+            '<div class="name">' + s.name + '</div>' +
+            '<div class="pct">' + (v/60).toFixed(1) + 'h · ' + pct + '%</div>' +
+        '</div>';
+    }).join('');
+}
+
+function mvlRenderStageBars(filtered) {
+    const wrap = document.getElementById('mvlStageBars');
+    if (!wrap) return;
+
+    // Average minutes per stage (only over moves that recorded a value > 0 for that stage)
+    const stats = {};
+    MVL_ALL_STAGES.forEach(s => { stats[s.key] = { total:0, count:0 }; });
+    filtered.forEach(m => {
+        const d = mvlMoveDelays(m);
+        Object.keys(d).forEach(k => {
+            if (d[k] > 0) { stats[k].total += d[k]; stats[k].count += 1; }
+        });
+    });
+
+    const avgs = MVL_ALL_STAGES.map(s => ({
+        ...s,
+        avg: stats[s.key].count > 0 ? stats[s.key].total / stats[s.key].count : 0,
+    }));
+    const max = Math.max(1, ...avgs.map(a => a.avg));
+
+    wrap.innerHTML = avgs.map(a => {
+        const pct = max > 0 ? (a.avg / max) * 100 : 0;
+        return '<div class="mvl-stage-row">' +
+            '<div class="name">' + a.name + '</div>' +
+            '<div class="val">' + Math.round(a.avg) + ' min</div>' +
+            '<div class="mvl-bar-track"><div class="mvl-bar-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + a.color + ',' + a.color + 'cc)"></div></div>' +
+        '</div>';
+    }).join('');
+}
+
+function mvlRenderRecentMoves(filtered) {
+    const grid = document.getElementById('mvlActiveGrid');
+    if (!grid) return;
+    const recent = filtered.slice().sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||'')).slice(0, 8);
+    if (recent.length === 0) {
+        grid.innerHTML = '<div class="mvl-empty" style="grid-column:1/-1;"><div class="ei">🚂</div><div class="et">No movements logged yet</div><div style="font-size:12px;">Click <strong>+ Log Movement</strong> to track your first train movement.</div></div>';
+        return;
+    }
+    grid.innerHTML = recent.map(m => {
+        const dir = m.direction || 'out';
+        const stages = dir === 'out'
+            ? [['Ready', m.readyFromProduction],['Protect Off', m.protectionRemoved],['Move', m.movementTakesPlace]]
+            : [['Req', m.moveRequested],['Arrived', m.arrivedAtShed],['Protect On', m.protectionApplied],['Hand Over', m.handedOver]];
+        let lastIdx = -1;
+        stages.forEach((s, i) => { if (s[1]) lastIdx = i; });
+        const isComplete = lastIdx === stages.length - 1;
+        const totalMins = mvlMoveTotalMins(m);
+        const stageHTML = stages.map((s, i) => {
+            let cls = '';
+            if (i <= lastIdx) cls = 'done';
+            if (i === lastIdx + 1 && !isComplete) cls = 'current';
+            return '<div class="mvl-spill ' + cls + '">' + s[0] + '</div>';
+        }).join('');
+        return '<div class="mvl-move-card dir-' + dir + (isComplete ? ' complete' : '') + '" onclick="mvlEditMove(\'' + m.id + '\')">' +
+            '<div class="top-row">' +
+                '<div class="unit">' + mvlEscape(m.unit || '—') + '</div>' +
+                '<span class="dir-pill ' + dir + '">' + (dir === 'out' ? '↑ OUT' : '↓ IN') + '</span>' +
+            '</div>' +
+            '<div class="meta">' + mvlEscape(m.shedRoad || '—') + ' · ' + mvlEscape(m.team || 'No team') + ' · ' + (m.date || '') + '</div>' +
+            '<div class="mvl-stage-pills">' + stageHTML + '</div>' +
+            '<div class="delay-line">Delay so far: <strong>' + Math.round(totalMins) + ' min</strong></div>' +
+        '</div>';
+    }).join('');
+}
+
+function mvlRenderHistory() {
+    const wrap = document.getElementById('mvlHistoryWrap');
+    if (!wrap) return;
+    const search = (document.getElementById('mvlHistorySearch')?.value || '').toLowerCase().trim();
+    let list = mvlMoves.slice().sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.updatedAt||'').localeCompare(a.updatedAt||''));
+    if (search) {
+        list = list.filter(m =>
+            (m.unit||'').toLowerCase().indexOf(search) !== -1 ||
+            (m.shedRoad||'').toLowerCase().indexOf(search) !== -1 ||
+            (m.team||'').toLowerCase().indexOf(search) !== -1 ||
+            (m.notes||'').toLowerCase().indexOf(search) !== -1
+        );
+    }
+    if (list.length === 0) {
+        wrap.innerHTML = '<div class="mvl-empty"><div class="ei">📋</div><div class="et">No movements yet</div></div>';
+        return;
+    }
+    let html = '<table class="mvl-history-table"><thead><tr>' +
+        '<th>Date</th><th>Dir</th><th>Unit</th><th>Shed/Road</th><th>Team</th><th>Total Delay</th><th>Notes</th><th></th>' +
+        '</tr></thead><tbody>';
+    list.forEach(m => {
+        const tot = Math.round(mvlMoveTotalMins(m));
+        html += '<tr onclick="mvlEditMove(\'' + m.id + '\')">' +
+            '<td class="mono">' + (m.date||'') + '</td>' +
+            '<td><span class="dir-pill ' + (m.direction||'out') + '" style="padding:2px 8px;border-radius:3px;font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:800;text-transform:uppercase;background:' + (m.direction === 'in' ? 'rgba(244,121,59,0.15);color:var(--orange)' : 'rgba(37,99,235,0.15);color:#2563eb') + ';">' + (m.direction === 'in' ? '↓ IN' : '↑ OUT') + '</span></td>' +
+            '<td class="mono">' + mvlEscape(m.unit||'') + '</td>' +
+            '<td>' + mvlEscape(m.shedRoad||'') + '</td>' +
+            '<td>' + mvlEscape(m.team||'') + '</td>' +
+            '<td class="mono"><strong style="color:' + (tot > 30 ? 'var(--red)' : tot > 10 ? 'var(--amber)' : 'var(--green)') + ';">' + tot + ' min</strong></td>' +
+            '<td style="font-size:11px;color:var(--muted);max-width:240px;">' + mvlEscape(m.notes||'') + '</td>' +
+            '<td><button class="btn btn-d" style="padding:4px 10px;font-size:10px;" onclick="mvlDeleteMove(\'' + m.id + '\',event)">Delete</button></td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+}
+
+function mvlEscape(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mvlExportCSV() {
+    const list = mvlFilterByPeriod(mvlMoves);
+    const rows = [
+        ['Date','Direction','Unit','Shed/Road','Team',
+         'Ready from Production','Protection Removed','Movement Takes Place',
+         'Move Requested','Arrived at Shed','Protection Applied','Handed Over',
+         'Total Delay (min)','Notes']
+    ];
+    list.forEach(m => {
+        const tot = Math.round(mvlMoveTotalMins(m));
+        rows.push([
+            m.date||'', m.direction||'', m.unit||'', m.shedRoad||'', m.team||'',
+            mvlFmtTime(m.readyFromProduction), mvlFmtTime(m.protectionRemoved), mvlFmtTime(m.movementTakesPlace),
+            mvlFmtTime(m.moveRequested), mvlFmtTime(m.arrivedAtShed), mvlFmtTime(m.protectionApplied), mvlFmtTime(m.handedOver),
+            tot, (m.notes||'').replace(/"/g,'""')
+        ]);
+    });
+    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'movement-log-' + mvlPeriod + '-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 </script>
 </body>
