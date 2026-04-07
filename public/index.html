@@ -1095,16 +1095,19 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
 <div class="mf"><button class="btn btn-x" onclick="closeAdmin()">Close</button></div></div></div>
 
 <!-- ADD USER MODAL -->
-<div class="modal-bg" id="addUserModal"><div class="modal" style="width:460px"><div class="mh"><h2>Add User</h2><button class="mx" onclick="closeAddUser()">&times;</button></div>
+<div class="modal-bg" id="addUserModal"><div class="modal" style="width:480px"><div class="mh"><h2>Add User</h2><button class="mx" onclick="closeAddUser()">&times;</button></div>
 <div class="mbody">
-  <div class="fg"><label>Username (used to log in)</label><input type="text" class="fi" id="auUsername" placeholder="e.g. lee.lockwood" autocomplete="off"></div>
-  <div class="fg"><label>Display Name</label><input type="text" class="fi" id="auDisplay" placeholder="e.g. Lee Lockwood" autocomplete="off"></div>
-  <div class="fg"><label>Initial Password (min 6 chars)</label><input type="text" class="fi" id="auPassword" placeholder="They&apos;ll change it on first login" autocomplete="off"></div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+    Most users will <strong>self-register</strong> by entering their details on the login page with the initial password (NL1!). Use this form only if you want to pre-create an account before they log in for the first time.
+  </p>
+  <div class="fr">
+    <div class="fg"><label>First Name</label><input type="text" class="fi" id="auFirst" placeholder="e.g. Lee" autocomplete="off"></div>
+    <div class="fg"><label>Last Name</label><input type="text" class="fi" id="auLast" placeholder="e.g. Lockwood" autocomplete="off"></div>
+  </div>
+  <div class="fg"><label>Clock Card Number</label><input type="text" class="fi mono" id="auClockCard" placeholder="e.g. 12345" autocomplete="off"></div>
+  <div class="fg"><label>Initial Password (min 4 chars)</label><input type="text" class="fi" id="auPassword" placeholder="They will change it on first login" value="NL1!" autocomplete="off"></div>
   <label class="chk"><input type="checkbox" id="auAdmin"><span>Make this user an admin</span></label>
   <div id="auMsg" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
-  <p style="font-size:11px;color:var(--muted);margin-top:10px">
-    Tell the new user their username and the initial password. When they log in for the first time the system will force them to change the password to one only they know.
-  </p>
 </div>
 <div class="mf"><button class="btn btn-x" onclick="closeAddUser()">Cancel</button><button class="btn btn-s" onclick="submitAddUser()">Create User</button></div></div></div>
 
@@ -3557,28 +3560,30 @@ async function loadAdmUsers(){
   try{
     const users=await apiGet('/api/admin/users');
     if(!users||users.length===0){
-      wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No users yet. Click <strong>+ Add User</strong> to create the first one.</div>';
+      wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No users yet. They will appear here as soon as anyone self-registers from the login page, or click <strong>+ Add User</strong> to create one manually.</div>';
     } else {
       let html='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--bg)">'+
-        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Username</th>'+
-        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Display Name</th>'+
+        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Name</th>'+
+        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Clock Card</th>'+
         '<th style="padding:8px 10px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Admin</th>'+
         '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Last Login</th>'+
         '<th style="padding:8px 10px;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)"></th>'+
         '</tr></thead><tbody>';
       users.forEach(u=>{
         const last=u.lastLogin?new Date(u.lastLogin).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Never';
-        const mustChange=u.mustChangePassword?' <span style="font-size:9px;background:rgba(217,119,6,0.18);color:var(--amber);padding:2px 6px;border-radius:3px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">PW Reset</span>':'';
+        const mustChange=u.mustChangePassword?' <span style="font-size:9px;background:rgba(217,119,6,0.18);color:var(--amber);padding:2px 6px;border-radius:3px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;margin-left:4px">PW Reset</span>':'';
+        const fullName=((u.firstName||'')+' '+(u.lastName||'')).trim()||u.displayName||'(unnamed)';
+        const isMe=currentUser&&u.id===currentUser.id;
         html+='<tr style="border-bottom:1px solid var(--border-light)">'+
-          '<td style="padding:8px 10px;font-family:JetBrains Mono,monospace;font-weight:600">'+esc(u.username)+mustChange+'</td>'+
-          '<td style="padding:8px 10px">'+esc(u.displayName||'')+'</td>'+
-          '<td style="padding:8px 10px;text-align:center">'+(u.isAdmin?'<span style="color:var(--orange);font-weight:800">✓</span>':'')+'</td>'+
+          '<td style="padding:8px 10px"><strong>'+esc(fullName)+'</strong>'+mustChange+(isMe?' <span style="font-size:9px;background:rgba(37,99,235,0.18);color:var(--blue);padding:2px 6px;border-radius:3px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;margin-left:4px">YOU</span>':'')+'</td>'+
+          '<td style="padding:8px 10px;font-family:JetBrains Mono,monospace;font-weight:600">'+esc(u.clockCard||u.username)+'</td>'+
+          '<td style="padding:8px 10px;text-align:center">'+(u.isAdmin?'<span style="color:var(--orange);font-weight:800;font-size:14px">✓</span>':'<span style="color:var(--muted)">—</span>')+'</td>'+
           '<td style="padding:8px 10px;font-size:11px;color:var(--muted)">'+last+'</td>'+
           '<td style="padding:8px 10px;text-align:right;white-space:nowrap">'+
-            '<button class="btn btn-x" style="padding:4px 9px;font-size:10px;margin-right:4px" onclick="openResetPw('+u.id+',\''+esc(u.username).replace(/'/g,"\\'")+'\')">Reset PW</button>'+
-            (currentUser&&u.id===currentUser.id?'':
+            '<button class="btn btn-x" style="padding:4px 9px;font-size:10px;margin-right:4px" onclick="openResetPw('+u.id+',\''+esc(fullName).replace(/'/g,"\\'")+'\')">Reset PW</button>'+
+            (isMe?'':
               '<button class="btn btn-x" style="padding:4px 9px;font-size:10px;margin-right:4px" onclick="admToggleAdmin('+u.id+','+(u.isAdmin?'false':'true')+')">'+(u.isAdmin?'Revoke Admin':'Make Admin')+'</button>'+
-              '<button class="btn btn-d" style="padding:4px 9px;font-size:10px" onclick="admDeleteUser('+u.id+',\''+esc(u.username).replace(/'/g,"\\'")+'\')">Delete</button>'
+              '<button class="btn btn-d" style="padding:4px 9px;font-size:10px" onclick="admDeleteUser('+u.id+',\''+esc(fullName).replace(/'/g,"\\'")+'\')">Delete</button>'
             )+
           '</td>'+
         '</tr>';
@@ -3599,29 +3604,32 @@ async function loadAdmUsers(){
 
 function openAddUser(){
   document.getElementById('addUserModal').classList.add('open');
-  document.getElementById('auUsername').value='';
-  document.getElementById('auDisplay').value='';
-  document.getElementById('auPassword').value='';
+  document.getElementById('auFirst').value='';
+  document.getElementById('auLast').value='';
+  document.getElementById('auClockCard').value='';
+  document.getElementById('auPassword').value='NL1!';
   document.getElementById('auAdmin').checked=false;
   document.getElementById('auMsg').style.display='none';
-  setTimeout(()=>document.getElementById('auUsername').focus(),100);
+  setTimeout(()=>document.getElementById('auFirst').focus(),100);
 }
 function closeAddUser(){document.getElementById('addUserModal').classList.remove('open')}
 async function submitAddUser(){
-  const u=document.getElementById('auUsername').value.trim();
-  const d=document.getElementById('auDisplay').value.trim();
+  const fn=document.getElementById('auFirst').value.trim();
+  const ln=document.getElementById('auLast').value.trim();
+  const cc=document.getElementById('auClockCard').value.trim();
   const p=document.getElementById('auPassword').value;
   const a=document.getElementById('auAdmin').checked;
   const msg=document.getElementById('auMsg');
   msg.style.display='none';
-  if(!u){msg.textContent='Username is required.';msg.style.display='block';return}
-  if(p.length<6){msg.textContent='Initial password must be at least 6 characters.';msg.style.display='block';return}
+  if(!fn||!ln){msg.textContent='First name and last name are required.';msg.style.display='block';return}
+  if(!cc){msg.textContent='Clock card number is required.';msg.style.display='block';return}
+  if(p.length<4){msg.textContent='Initial password must be at least 4 characters.';msg.style.display='block';return}
   try{
-    const r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,displayName:d,password:p,isAdmin:a})});
+    const r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({firstName:fn,lastName:ln,clockCard:cc,password:p,isAdmin:a})});
     const j=await r.json();
     if(!r.ok){msg.textContent=j.error||'Failed to create user';msg.style.display='block';return}
     closeAddUser();
-    alert('✓ User created.\n\nUsername: '+u+'\nInitial password: '+p+'\n\nGive these to the user. They will be forced to change the password on first login.');
+    alert('✓ User created.\n\nName: '+fn+' '+ln+'\nClock Card: '+cc+'\nInitial password: '+p+'\n\nTell them to log in with their first name, last name, clock card and the initial password. They will be forced to change the password on first login.');
     loadAdmUsers();
   }catch(e){msg.textContent='Error: '+e.message;msg.style.display='block'}
 }
@@ -3870,17 +3878,31 @@ function admExportCSV(){
 
 // Activity log
 async function loadAdmLog(){
-  const log=await apiGet('/api/admin/log');
+  const filter=document.getElementById('admLogFilter')?.value.trim()||'';
+  const url='/api/admin/log'+(filter?'?user='+encodeURIComponent(filter):'');
+  const log=await apiGet(url);
   const el=document.getElementById('admLogTable');
-  if(!log||!log.length){el.innerHTML='<p style="color:var(--muted);font-size:12px">No activity yet</p>';return}
-  let h='<table class="log-tbl"><thead><tr><th>Time</th><th>Action</th><th>Detail</th><th>Shift</th><th>User</th></tr></thead><tbody>';
+  if(!log||!log.length){
+    el.innerHTML='<p style="color:var(--muted);font-size:12px;padding:12px">No activity yet'+(filter?' for "'+esc(filter)+'"':'')+'</p>';
+    return;
+  }
+  let h='<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;padding:0 2px">'+
+    '<input type="text" id="admLogFilter" class="ap-input" style="flex:1;max-width:280px" placeholder="Filter by user name..." value="'+esc(filter)+'" oninput="if(window._adlt)clearTimeout(window._adlt);window._adlt=setTimeout(loadAdmLog,400)">'+
+    '<button class="btn btn-x" style="padding:6px 12px;font-size:11px" onclick="loadAdmLog()">&#8635;</button>'+
+    '<span style="font-size:11px;color:var(--muted);margin-left:auto">'+log.length+' entries</span>'+
+  '</div>';
+  h+='<table class="log-tbl"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th><th>Shift</th></tr></thead><tbody>';
   log.forEach(l=>{
     const t=new Date(l.ts);
     const ts=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-    h+=`<tr><td class="log-time">${ts}</td><td class="log-action">${esc(l.action)}</td><td>${esc(l.detail||'—')}</td><td style="font-size:10px">${l.shift_key?esc(kLabel(l.shift_key)):'—'}</td><td>${esc(l.user_type)}</td></tr>`;
+    const userDisplay=l.user_name?esc(l.user_name):'<span style="color:var(--muted);font-style:italic">'+esc(l.user_type||'unknown')+'</span>';
+    const userStyle=l.user_type==='admin'?'color:var(--orange);font-weight:700':'';
+    h+=`<tr><td class="log-time">${ts}</td><td style="${userStyle}">${userDisplay}</td><td class="log-action">${esc(l.action)}</td><td>${esc(l.detail||'—')}</td><td style="font-size:10px">${l.shift_key?esc(kLabel(l.shift_key)):'—'}</td></tr>`;
   });
   h+='</tbody></table>';
   el.innerHTML=h;
+  // Restore focus to filter input if it was being typed in
+  if(filter)document.getElementById('admLogFilter')?.focus();
 }
 
 // Auto-save reminder every 6 hours
