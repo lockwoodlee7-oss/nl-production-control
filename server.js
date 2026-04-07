@@ -16,19 +16,132 @@ const pool = new Pool({
 
 let SITE_PASSWORD = process.env.SITE_PASSWORD || 'NL1!';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'NLAdmin!';
+// Set ALLOW_LEGACY_PASSWORD=false in env (or via admin panel) to disable the
+// shared NL1! / NLAdmin! passwords entirely once everyone has a real account.
+let ALLOW_LEGACY_PASSWORD = process.env.ALLOW_LEGACY_PASSWORD !== 'false';
 
-function hashPw(pw) {
+// ── Legacy password hash (single-shared-password mode, kept for backwards compat) ──
+function hashLegacy(pw) {
   return crypto.createHash('sha256').update(pw).digest('hex');
 }
+
+// ── Per-user password hashing (PBKDF2-SHA512, FIPS-approved) ──
+// 210,000 iterations meets current OWASP guidance for SHA-512.
+function pwHash(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 210000, 64, 'sha512').toString('hex');
+  return 'pbkdf2$210000$' + salt + '$' + hash;
+}
+function pwVerify(password, stored) {
+  if (!stored) return false;
+  const parts = stored.split('$');
+  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+  const iters = parseInt(parts[1], 10);
+  const salt = parts[2];
+  const expected = parts[3];
+  const test = crypto.pbkdf2Sync(password, salt, iters, 64, 'sha512').toString('hex');
+  // Constant-time compare
+  if (test.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < test.length; i++) diff |= test.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
+// ── Session secret ── HMAC-signed cookie tokens. Persisted in DB so sessions
+// survive a server restart. Loaded once at startup, cached in memory.
+let SESSION_SECRET = process.env.SESSION_SECRET || null;
+async function loadSessionSecret() {
+  if (SESSION_SECRET) return SESSION_SECRET;
+  const r = await pool.query('SELECT data FROM config WHERE key = $1', ['_session_secret']);
+  if (r.rows.length > 0 && r.rows[0].data && r.rows[0].data.secret) {
+    SESSION_SECRET = r.rows[0].data.secret;
+    return SESSION_SECRET;
+  }
+  SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+  await pool.query(
+    'INSERT INTO config (key, data) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET data = $2',
+    ['_session_secret', { secret: SESSION_SECRET }]
+  );
+  return SESSION_SECRET;
+}
+function makeSessionToken(userId) {
+  const iat = Date.now();
+  const payload = userId + '.' + iat;
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');
+  return payload + '.' + sig;
+}
+function verifySessionToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [userId, iat, sig] = parts;
+  if (!/^\d+$/.test(userId) || !/^\d+$/.test(iat)) return null;
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(userId + '.' + iat).digest('hex');
+  if (sig.length !== expected.length) return null;
+  let diff = 0;
+  for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+  if (diff !== 0) return null;
+  // 30-day expiry
+  if (Date.now() - parseInt(iat, 10) > 30 * 86400000) return null;
+  return parseInt(userId, 10);
+}
+
+// ── Failed login lockout (in-memory; resets on server restart) ──
+const failedAttempts = new Map(); // key -> { count, lockedUntil }
+function noteFailedLogin(key) {
+  const now = Date.now();
+  let r = failedAttempts.get(key);
+  if (!r || (r.lockedUntil && now > r.lockedUntil)) r = { count: 0, lockedUntil: 0 };
+  r.count++;
+  if (r.count >= 5) r.lockedUntil = now + 15 * 60 * 1000; // 15 min
+  failedAttempts.set(key, r);
+  return r;
+}
+function isLockedOut(key) {
+  const r = failedAttempts.get(key);
+  if (!r) return false;
+  if (r.lockedUntil && Date.now() < r.lockedUntil) return true;
+  return false;
+}
+function clearFailedLogins(key) { failedAttempts.delete(key); }
 
 // Password protection middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(require('cookie-parser')());
 
-function checkAuth(req, res, next) {
-  if (req.path === '/login' || req.path === '/login.html') return next();
+// Cached lookup of currently-logged-in user (per request)
+async function getCurrentUser(req) {
   const token = req.cookies?.nlauth;
-  if (token === hashPw(ADMIN_PASSWORD) || token === hashPw(SITE_PASSWORD)) return next();
+  if (!token) return null;
+  // New signed-token format
+  if (token.split('.').length === 3) {
+    const userId = verifySessionToken(token);
+    if (!userId) return null;
+    try {
+      const r = await pool.query('SELECT id, username, display_name, is_admin, must_change_password FROM users WHERE id = $1', [userId]);
+      if (r.rows.length === 0) return null;
+      return {
+        id: r.rows[0].id,
+        username: r.rows[0].username,
+        displayName: r.rows[0].display_name,
+        isAdmin: !!r.rows[0].is_admin,
+        mustChangePassword: !!r.rows[0].must_change_password,
+        kind: 'user'
+      };
+    } catch (e) { console.error('getCurrentUser:', e.message); return null; }
+  }
+  // Legacy shared-password format (only valid if legacy mode still allowed)
+  if (ALLOW_LEGACY_PASSWORD) {
+    if (token === hashLegacy(ADMIN_PASSWORD)) return { id: 0, username: 'admin', displayName: 'Legacy Admin', isAdmin: true, mustChangePassword: false, kind: 'legacy' };
+    if (token === hashLegacy(SITE_PASSWORD)) return { id: 0, username: 'shared', displayName: 'Shared User', isAdmin: false, mustChangePassword: false, kind: 'legacy' };
+  }
+  return null;
+}
+
+async function checkAuth(req, res, next) {
+  if (req.path === '/login' || req.path === '/login.html') return next();
+  const user = await getCurrentUser(req);
+  if (user) { req.user = user; return next(); }
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -36,38 +149,88 @@ function checkAuth(req, res, next) {
 }
 
 function isAdmin(req) {
-  return req.cookies?.nlauth === hashPw(ADMIN_PASSWORD);
+  return req.user && req.user.isAdmin;
 }
 
-app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
-  const pw = req.body.password;
-  if (pw === ADMIN_PASSWORD) {
-    res.cookie('nlauth', hashPw(ADMIN_PASSWORD), { httpOnly: true, sameSite: 'lax' });
-    return res.redirect('/');
+app.post('/login', express.urlencoded({ extended: false }), async (req, res) => {
+  const username = (req.body.username || '').trim().toLowerCase();
+  const pw = req.body.password || '';
+  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+  const lockKey = (username || '_legacy_') + '@' + ip;
+
+  if (isLockedOut(lockKey)) {
+    return res.send(loginPage('Too many failed attempts. Try again in 15 minutes.'));
   }
-  if (pw === SITE_PASSWORD) {
-    res.cookie('nlauth', hashPw(SITE_PASSWORD), { httpOnly: true, sameSite: 'lax' });
-    return res.redirect('/');
+
+  // Try per-user login first if a username was provided
+  if (username) {
+    try {
+      const r = await pool.query(
+        'SELECT id, username, password_hash, is_admin, must_change_password FROM users WHERE LOWER(username) = $1',
+        [username]
+      );
+      if (r.rows.length > 0 && pwVerify(pw, r.rows[0].password_hash)) {
+        clearFailedLogins(lockKey);
+        await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [r.rows[0].id]);
+        const token = makeSessionToken(r.rows[0].id);
+        res.cookie('nlauth', token, { httpOnly: true, sameSite: 'lax', secure: req.secure || req.headers['x-forwarded-proto'] === 'https', maxAge: 30 * 86400000 });
+        logActivity('login', `User: ${r.rows[0].username}`, null, r.rows[0].is_admin ? 'admin' : 'user');
+        return res.redirect('/');
+      }
+    } catch (e) {
+      console.error('Login error:', e.message);
+    }
+    noteFailedLogin(lockKey);
+    return res.send(loginPage('Incorrect username or password'));
   }
-  return res.send(loginPage('Incorrect password'));
+
+  // Fall back to legacy shared password (if still allowed)
+  if (ALLOW_LEGACY_PASSWORD) {
+    if (pw === ADMIN_PASSWORD) {
+      clearFailedLogins(lockKey);
+      res.cookie('nlauth', hashLegacy(ADMIN_PASSWORD), { httpOnly: true, sameSite: 'lax', secure: req.secure || req.headers['x-forwarded-proto'] === 'https' });
+      logActivity('login', 'Legacy admin password', null, 'admin');
+      return res.redirect('/');
+    }
+    if (pw === SITE_PASSWORD) {
+      clearFailedLogins(lockKey);
+      res.cookie('nlauth', hashLegacy(SITE_PASSWORD), { httpOnly: true, sameSite: 'lax', secure: req.secure || req.headers['x-forwarded-proto'] === 'https' });
+      logActivity('login', 'Legacy shared password', null, 'user');
+      return res.redirect('/');
+    }
+  }
+
+  noteFailedLogin(lockKey);
+  return res.send(loginPage('Incorrect ' + (ALLOW_LEGACY_PASSWORD ? 'username or ' : '') + 'password'));
+});
+
+// Logout — clears cookie
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('nlauth');
+  res.json({ ok: true });
 });
 
 function loginPage(error) {
+  const legacyHint = ALLOW_LEGACY_PASSWORD
+    ? `<div class="hint">Existing users: leave the username blank and enter the shared password during the transition period.</div>`
+    : '';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Login — Neville Hill TCC</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Barlow Condensed',sans-serif;background:#0d1017;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.box{background:#161b26;border:1px solid #232a38;border-radius:14px;padding:40px;width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+body{font-family:'Barlow Condensed',sans-serif;background:#0d1017;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.box{background:#161b26;border:1px solid #232a38;border-radius:14px;padding:36px 40px;width:380px;max-width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .logo{width:60px;height:60px;background:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#1a1f3a;margin-bottom:16px}
 h1{color:#fff;font-size:20px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
-.sub{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:1.5px;margin-bottom:24px}
-input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid #232a38;background:#0d1017;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:2px}
+.sub{color:rgba(255,255,255,.3);font-size:10px;letter-spacing:1.5px;margin-bottom:22px}
+label{display:block;text-align:left;color:rgba(255,255,255,.5);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;margin-top:6px;font-family:'Barlow Condensed',sans-serif}
+input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid #232a38;background:#0d1017;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;margin-bottom:6px;text-align:center;letter-spacing:1.5px}
 input:focus{border-color:#f4793b}
-button{width:100%;padding:12px;border-radius:8px;border:none;background:#f4793b;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer}
+button{width:100%;padding:12px;border-radius:8px;border:none;background:#f4793b;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;margin-top:14px}
 button:hover{opacity:.85}
-.err{color:#f87171;font-size:12px;margin-bottom:12px;font-weight:700}
+.err{color:#f87171;font-size:12px;margin-bottom:12px;font-weight:700;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:8px;font-family:'Barlow',sans-serif}
+.hint{color:rgba(255,255,255,.4);font-size:10px;margin-top:14px;font-family:'Barlow',sans-serif;line-height:1.5}
 </style></head><body>
 <div class="box">
 <div class="logo">NL</div>
@@ -75,9 +238,13 @@ button:hover{opacity:.85}
 <div class="sub">NEVILLE HILL — REPAIR SHED OPERATIONS</div>
 ${error ? `<div class="err">${error}</div>` : ''}
 <form method="POST" action="/login">
-<input type="password" name="password" placeholder="Enter password" autofocus>
+<label>Username</label>
+<input type="text" name="username" placeholder="e.g. lee.lockwood" autocomplete="username" autofocus>
+<label>Password</label>
+<input type="password" name="password" placeholder="Your password" autocomplete="current-password">
 <button type="submit">LOGIN</button>
 </form>
+${legacyHint}
 </div></body></html>`;
 }
 
@@ -118,6 +285,42 @@ async function initDB() {
       user_type TEXT DEFAULT 'user'
     )
   `);
+  // Per-user accounts table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      display_name TEXT,
+      password_hash TEXT NOT NULL,
+      is_admin BOOLEAN DEFAULT FALSE,
+      must_change_password BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      last_login TIMESTAMPTZ,
+      created_by TEXT
+    )
+  `);
+  // Persisted session HMAC secret
+  await loadSessionSecret();
+  // Bootstrap a default admin user on first run, only if no users exist yet.
+  // Username: admin / Password: change-on-first-login (forces immediate change).
+  try {
+    const r = await pool.query('SELECT COUNT(*)::int AS c FROM users');
+    if (r.rows[0].c === 0) {
+      const bootstrapPw = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'ChangeMe1!';
+      await pool.query(
+        'INSERT INTO users (username, display_name, password_hash, is_admin, must_change_password, created_by) VALUES ($1, $2, $3, TRUE, TRUE, $4)',
+        ['admin', 'Default Admin', pwHash(bootstrapPw), 'system']
+      );
+      console.log('────────────────────────────────────────────────────────');
+      console.log('  USERS TABLE INITIALISED');
+      console.log('  Default admin created — username: admin');
+      console.log('  Initial password: ' + bootstrapPw);
+      console.log('  YOU MUST CHANGE THIS ON FIRST LOGIN');
+      console.log('────────────────────────────────────────────────────────');
+    }
+  } catch (e) {
+    console.error('Bootstrap admin error:', e.message);
+  }
 }
 
 // ═══ ACTIVITY LOG HELPER ═══
@@ -132,15 +335,173 @@ async function logActivity(action, detail, shiftKey, userType) {
 
 // ═══ AUTH ENDPOINTS ═══
 app.get('/api/auth/me', (req, res) => {
-  res.json({ admin: isAdmin(req) });
+  if (!req.user) return res.json({ authenticated: false });
+  res.json({
+    authenticated: true,
+    admin: !!req.user.isAdmin,
+    id: req.user.id,
+    username: req.user.username,
+    displayName: req.user.displayName,
+    mustChangePassword: !!req.user.mustChangePassword,
+    kind: req.user.kind
+  });
+});
+
+// Self-service password change (any logged-in user with a real account)
+app.post('/api/auth/change-password', async (req, res) => {
+  if (!req.user || req.user.kind !== 'user') {
+    return res.status(401).json({ error: 'You must be logged in as a real user (not the legacy shared password) to change a password.' });
+  }
+  const { currentPassword, newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+  try {
+    const r = await pool.query('SELECT password_hash, must_change_password FROM users WHERE id = $1', [req.user.id]);
+    if (r.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    // Skip current-password check if must_change_password is set (admin reset)
+    if (!r.rows[0].must_change_password) {
+      if (!currentPassword || !pwVerify(currentPassword, r.rows[0].password_hash)) {
+        return res.status(403).json({ error: 'Current password is incorrect.' });
+      }
+    }
+    await pool.query(
+      'UPDATE users SET password_hash = $1, must_change_password = FALSE WHERE id = $2',
+      [pwHash(newPassword), req.user.id]
+    );
+    logActivity('password-change', `${req.user.username} changed own password`, null, req.user.isAdmin ? 'admin' : 'user');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ═══ ADMIN ENDPOINTS ═══
 
-// Get connected user count
-app.get('/api/admin/users', (req, res) => {
+// Get connected user count (was previously /api/admin/users — moved to avoid clash)
+app.get('/api/admin/online', (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
   res.json({ count: io.engine.clientsCount });
+});
+
+// ── User management ──
+// List all users
+app.get('/api/admin/users', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  try {
+    const r = await pool.query(
+      'SELECT id, username, display_name, is_admin, must_change_password, created_at, last_login, created_by FROM users ORDER BY username ASC'
+    );
+    res.json(r.rows.map(u => ({
+      id: u.id,
+      username: u.username,
+      displayName: u.display_name,
+      isAdmin: u.is_admin,
+      mustChangePassword: u.must_change_password,
+      createdAt: u.created_at,
+      lastLogin: u.last_login,
+      createdBy: u.created_by
+    })));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Create a user
+app.post('/api/admin/users', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { username, displayName, password, isAdmin: makeAdmin } = req.body || {};
+  if (!username || !/^[a-zA-Z0-9._-]{2,40}$/.test(username)) {
+    return res.status(400).json({ error: 'Username must be 2–40 chars, letters/numbers/._- only' });
+  }
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Initial password must be at least 6 characters' });
+  }
+  try {
+    const r = await pool.query(
+      'INSERT INTO users (username, display_name, password_hash, is_admin, must_change_password, created_by) VALUES ($1, $2, $3, $4, TRUE, $5) RETURNING id',
+      [username.toLowerCase(), displayName || username, pwHash(password), !!makeAdmin, req.user?.username || 'admin']
+    );
+    logActivity('user-create', `Created user: ${username}` + (makeAdmin ? ' (admin)' : ''), null, 'admin');
+    res.json({ ok: true, id: r.rows[0].id });
+  } catch (e) {
+    if (e.code === '23505') return res.status(400).json({ error: 'Username already exists' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update a user (rename, toggle admin)
+app.put('/api/admin/users/:id', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const id = parseInt(req.params.id, 10);
+  const { displayName, isAdmin: makeAdmin } = req.body || {};
+  // Prevent admin from removing their own admin flag (would lock them out)
+  if (req.user && req.user.id === id && makeAdmin === false) {
+    return res.status(400).json({ error: 'You cannot remove your own admin rights' });
+  }
+  try {
+    await pool.query(
+      'UPDATE users SET display_name = COALESCE($1, display_name), is_admin = COALESCE($2, is_admin) WHERE id = $3',
+      [displayName ?? null, typeof makeAdmin === 'boolean' ? makeAdmin : null, id]
+    );
+    logActivity('user-update', `Updated user id ${id}`, null, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Reset a user's password (forces them to change it on next login)
+app.post('/api/admin/users/:id/reset-password', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const id = parseInt(req.params.id, 10);
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  }
+  try {
+    const r = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
+    if (r.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    await pool.query(
+      'UPDATE users SET password_hash = $1, must_change_password = TRUE WHERE id = $2',
+      [pwHash(newPassword), id]
+    );
+    logActivity('user-pwreset', `Reset password for ${r.rows[0].username}`, null, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete a user
+app.delete('/api/admin/users/:id', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const id = parseInt(req.params.id, 10);
+  if (req.user && req.user.id === id) {
+    return res.status(400).json({ error: 'You cannot delete yourself' });
+  }
+  try {
+    const r = await pool.query('SELECT username FROM users WHERE id = $1', [id]);
+    if (r.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    logActivity('user-delete', `Deleted user: ${r.rows[0].username}`, null, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Toggle the legacy shared-password mode on/off
+app.post('/api/admin/legacy-mode', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  const { enabled } = req.body || {};
+  ALLOW_LEGACY_PASSWORD = !!enabled;
+  logActivity('legacy-mode', `Legacy shared password ${enabled ? 'ENABLED' : 'DISABLED'}`, null, 'admin');
+  res.json({ ok: true, allowLegacyPassword: ALLOW_LEGACY_PASSWORD });
+});
+app.get('/api/admin/legacy-mode', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Admin only' });
+  res.json({ allowLegacyPassword: ALLOW_LEGACY_PASSWORD });
 });
 
 // Change site password

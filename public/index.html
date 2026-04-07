@@ -868,6 +868,8 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
   <span class="save-ind"><span class="dot" id="saveDot"></span><span id="saveTxt">Saved</span></span>
   <span class="conn-status" id="connStatus">&#9679; Live</span>
   <span class="admin-badge" id="adminBadge" style="display:none">ADMIN</span>
+  <span class="user-badge" id="userBadge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);padding:4px 10px;background:rgba(255,255,255,0.06);border-radius:5px;letter-spacing:0.5px;text-transform:uppercase;"></span>
+  <button class="tb" id="btnAccount" onclick="openAccount()" style="display:none" title="Account &amp; password">&#128100;</button>
   <button class="tb" id="btnAdmin" onclick="openAdmin()" style="display:none">&#9881; Admin</button>
 </div>
 <div class="announce-bar" id="announceBar"><span id="announceMsg"></span></div>
@@ -963,6 +965,7 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
   <div class="adm-tab" onclick="admTab(3)">Alerts</div>
   <div class="adm-tab" onclick="admTab(4)">Stats</div>
   <div class="adm-tab" onclick="admTab(5)">Log</div>
+  <div class="adm-tab" onclick="admTab(6)">Users</div>
 </div>
 
 <!-- OVERVIEW TAB -->
@@ -1060,7 +1063,94 @@ body.kiosk-mvlog #mvlogModalBg .mbody { max-height: calc(100vh - 60px); overflow
   </div>
 </div>
 
+<!-- USERS TAB -->
+<div class="adm-page" id="admP6">
+  <div class="adm-section">
+    <h3>User Accounts</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">
+      Add a real account for everyone who uses the system. They&apos;ll log in with their username and the initial password you set, then they&apos;re forced to change it to their own.
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="openAddUser()">+ Add User</button>
+      <button class="btn btn-x" onclick="loadAdmUsers()" style="margin-left:auto">&#8635; Refresh</button>
+    </div>
+    <div id="admUsersWrap" style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--card)"></div>
+  </div>
+  <div class="adm-section">
+    <h3>Legacy Shared Password</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      The original NL1! / admin shared passwords. Keep these on while you&apos;re migrating people across, then turn them off once everyone has their own account.
+    </p>
+    <div class="ap-row" style="border:none">
+      <span class="ap-label">Status</span>
+      <span class="ap-val" id="admLegacyStatus">—</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-x" onclick="admToggleLegacy(true)">Enable Legacy</button>
+      <button class="btn btn-d" onclick="admToggleLegacy(false)">Disable Legacy</button>
+    </div>
+  </div>
+</div>
+
 <div class="mf"><button class="btn btn-x" onclick="closeAdmin()">Close</button></div></div></div>
+
+<!-- ADD USER MODAL -->
+<div class="modal-bg" id="addUserModal"><div class="modal" style="width:460px"><div class="mh"><h2>Add User</h2><button class="mx" onclick="closeAddUser()">&times;</button></div>
+<div class="mbody">
+  <div class="fg"><label>Username (used to log in)</label><input type="text" class="fi" id="auUsername" placeholder="e.g. lee.lockwood" autocomplete="off"></div>
+  <div class="fg"><label>Display Name</label><input type="text" class="fi" id="auDisplay" placeholder="e.g. Lee Lockwood" autocomplete="off"></div>
+  <div class="fg"><label>Initial Password (min 6 chars)</label><input type="text" class="fi" id="auPassword" placeholder="They&apos;ll change it on first login" autocomplete="off"></div>
+  <label class="chk"><input type="checkbox" id="auAdmin"><span>Make this user an admin</span></label>
+  <div id="auMsg" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
+  <p style="font-size:11px;color:var(--muted);margin-top:10px">
+    Tell the new user their username and the initial password. When they log in for the first time the system will force them to change the password to one only they know.
+  </p>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeAddUser()">Cancel</button><button class="btn btn-s" onclick="submitAddUser()">Create User</button></div></div></div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-bg" id="rpwModal"><div class="modal" style="width:420px"><div class="mh"><h2>Reset Password</h2><button class="mx" onclick="closeResetPw()">&times;</button></div>
+<div class="mbody">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Reset password for <strong id="rpwUser"></strong></p>
+  <div class="fg"><label>New Password (min 6 chars)</label><input type="text" class="fi" id="rpwPassword" placeholder="Temporary password" autocomplete="off"></div>
+  <div id="rpwMsg" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
+  <p style="font-size:11px;color:var(--muted);margin-top:10px">
+    Tell them the new password. They&apos;ll be forced to change it again on next login.
+  </p>
+</div>
+<div class="mf"><button class="btn btn-x" onclick="closeResetPw()">Cancel</button><button class="btn btn-s" onclick="submitResetPw()">Reset</button></div></div></div>
+
+<!-- ACCOUNT / SELF-SERVICE PASSWORD CHANGE MODAL -->
+<div class="modal-bg" id="accountModal"><div class="modal" style="width:440px"><div class="mh"><h2>&#128100; My Account</h2><button class="mx" onclick="closeAccount()">&times;</button></div>
+<div class="mbody">
+  <div id="accountInfo" style="margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px"></div>
+  <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Change My Password</h3>
+  <div class="fg"><label>Current Password</label><input type="password" class="fi" id="acCurrent" autocomplete="current-password"></div>
+  <div class="fg"><label>New Password (min 6 chars)</label><input type="password" class="fi" id="acNew" autocomplete="new-password"></div>
+  <div class="fg"><label>Confirm New Password</label><input type="password" class="fi" id="acConfirm" autocomplete="new-password"></div>
+  <div id="acMsg" style="font-size:12px;color:var(--red);margin-top:6px;display:none"></div>
+</div>
+<div class="mf">
+  <button class="btn btn-x" onclick="logoutUser()" style="background:var(--red);color:#fff">Log Out</button>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-x" onclick="closeAccount()">Cancel</button>
+    <button class="btn btn-s" onclick="submitChangePassword()">Update Password</button>
+  </div>
+</div>
+</div></div>
+
+<!-- FORCE PASSWORD CHANGE MODAL (cannot be dismissed) -->
+<div class="modal-bg" id="forcePwModal"><div class="modal" style="width:460px"><div class="mh"><h2>&#128274; Set Your Password</h2></div>
+<div class="mbody">
+  <p style="font-size:13px;color:var(--text);margin-bottom:14px;background:rgba(244,121,59,0.08);border:1px solid rgba(244,121,59,0.25);padding:10px 12px;border-radius:6px">
+    <strong>Welcome.</strong> Before you can use the system, please set a password that only you know. The temporary password you were given by the admin will no longer work after this.
+  </p>
+  <div class="fg"><label>New Password (min 6 chars)</label><input type="password" class="fi" id="fpNew" autocomplete="new-password"></div>
+  <div class="fg"><label>Confirm New Password</label><input type="password" class="fi" id="fpConfirm" autocomplete="new-password"></div>
+  <div id="fpMsg" style="font-size:12px;color:var(--red);margin-top:6px;display:none"></div>
+</div>
+<div class="mf" style="justify-content:flex-end"><button class="btn btn-s" onclick="submitForcePwChange()">Set Password &amp; Continue</button></div>
+</div></div>
 
 <!-- MOVE VS DEVELOP MODAL -->
 <div class="modal-bg" id="mvdModal"><div class="modal" style="width:440px"><div class="mh"><h2>Move or Develop?</h2><button class="mx" onclick="closeMVD()">&times;</button></div>
@@ -3362,14 +3452,240 @@ async function executeSwapover(){
 
 // ═══ ADMIN & USER COUNT ═══
 let isAdminUser=false,shiftLocked=false,lockedKey='',admFleetData={};
+let currentUser=null;
 
 async function checkAdmin(){
   try{
     const r=await apiGet('/api/auth/me');
+    currentUser=r||null;
     isAdminUser=r&&r.admin;
     document.getElementById('adminBadge').style.display=isAdminUser?'':'none';
     document.getElementById('btnAdmin').style.display=isAdminUser?'':'none';
+    // Show logged-in user name and Account button in topbar
+    const ub=document.getElementById('userBadge');
+    if(ub){
+      if(r&&r.authenticated&&r.kind==='user'){
+        ub.style.display='';
+        ub.textContent=(r.displayName||r.username)+(r.admin?' • ADMIN':'');
+        document.getElementById('btnAccount').style.display='';
+      } else if(r&&r.authenticated&&r.kind==='legacy'){
+        ub.style.display='';
+        ub.textContent='Legacy login';
+        ub.style.color='#fcd34d';
+        document.getElementById('btnAccount').style.display='none';
+      } else {
+        ub.style.display='none';
+        document.getElementById('btnAccount').style.display='none';
+      }
+    }
+    // Force password change on first login
+    if(r&&r.mustChangePassword&&r.kind==='user'){
+      openForcePwChange();
+    }
+  }catch(e){console.error('checkAdmin failed:',e)}
+}
+
+async function logoutUser(){
+  if(!confirm('Log out?'))return;
+  try{await fetch('/api/auth/logout',{method:'POST'})}catch(e){}
+  location.href='/';
+}
+
+// ── ACCOUNT (self-service) ──
+function openAccount(){
+  document.getElementById('accountModal').classList.add('open');
+  document.getElementById('acCurrent').value='';
+  document.getElementById('acNew').value='';
+  document.getElementById('acConfirm').value='';
+  document.getElementById('acMsg').style.display='none';
+  const info=document.getElementById('accountInfo');
+  if(currentUser&&currentUser.authenticated){
+    info.innerHTML='<strong>'+esc(currentUser.displayName||currentUser.username)+'</strong>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:2px">@'+esc(currentUser.username)+(currentUser.admin?' &middot; <span style="color:var(--orange);font-weight:700">ADMIN</span>':'')+'</div>';
+  } else {
+    info.textContent='Not logged in as a real user.';
+  }
+}
+function closeAccount(){document.getElementById('accountModal').classList.remove('open')}
+async function submitChangePassword(){
+  const cur=document.getElementById('acCurrent').value;
+  const nw=document.getElementById('acNew').value;
+  const cf=document.getElementById('acConfirm').value;
+  const msg=document.getElementById('acMsg');
+  msg.style.display='none';
+  if(nw.length<6){msg.textContent='New password must be at least 6 characters.';msg.style.display='block';return}
+  if(nw!==cf){msg.textContent='Passwords do not match.';msg.style.display='block';return}
+  try{
+    const r=await fetch('/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword:cur,newPassword:nw})});
+    const j=await r.json();
+    if(!r.ok){msg.textContent=j.error||'Failed to change password';msg.style.display='block';return}
+    alert('✓ Password updated successfully.');
+    closeAccount();
+  }catch(e){msg.textContent='Error: '+e.message;msg.style.display='block'}
+}
+
+// ── FORCE PASSWORD CHANGE (first login) ──
+function openForcePwChange(){
+  document.getElementById('forcePwModal').classList.add('open');
+  document.getElementById('fpNew').value='';
+  document.getElementById('fpConfirm').value='';
+  document.getElementById('fpMsg').style.display='none';
+  setTimeout(()=>document.getElementById('fpNew').focus(),100);
+}
+async function submitForcePwChange(){
+  const nw=document.getElementById('fpNew').value;
+  const cf=document.getElementById('fpConfirm').value;
+  const msg=document.getElementById('fpMsg');
+  msg.style.display='none';
+  if(nw.length<6){msg.textContent='Password must be at least 6 characters.';msg.style.display='block';return}
+  if(nw!==cf){msg.textContent='Passwords do not match.';msg.style.display='block';return}
+  try{
+    const r=await fetch('/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newPassword:nw})});
+    const j=await r.json();
+    if(!r.ok){msg.textContent=j.error||'Failed to set password';msg.style.display='block';return}
+    document.getElementById('forcePwModal').classList.remove('open');
+    if(currentUser)currentUser.mustChangePassword=false;
+    alert('✓ Password set. Welcome to the Handover Log.');
+  }catch(e){msg.textContent='Error: '+e.message;msg.style.display='block'}
+}
+
+// ── ADMIN: USER MANAGEMENT ──
+async function loadAdmUsers(){
+  const wrap=document.getElementById('admUsersWrap');
+  if(!wrap)return;
+  wrap.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Loading...</div>';
+  try{
+    const users=await apiGet('/api/admin/users');
+    if(!users||users.length===0){
+      wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No users yet. Click <strong>+ Add User</strong> to create the first one.</div>';
+    } else {
+      let html='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--bg)">'+
+        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Username</th>'+
+        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Display Name</th>'+
+        '<th style="padding:8px 10px;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Admin</th>'+
+        '<th style="padding:8px 10px;text-align:left;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)">Last Login</th>'+
+        '<th style="padding:8px 10px;font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border)"></th>'+
+        '</tr></thead><tbody>';
+      users.forEach(u=>{
+        const last=u.lastLogin?new Date(u.lastLogin).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Never';
+        const mustChange=u.mustChangePassword?' <span style="font-size:9px;background:rgba(217,119,6,0.18);color:var(--amber);padding:2px 6px;border-radius:3px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">PW Reset</span>':'';
+        html+='<tr style="border-bottom:1px solid var(--border-light)">'+
+          '<td style="padding:8px 10px;font-family:JetBrains Mono,monospace;font-weight:600">'+esc(u.username)+mustChange+'</td>'+
+          '<td style="padding:8px 10px">'+esc(u.displayName||'')+'</td>'+
+          '<td style="padding:8px 10px;text-align:center">'+(u.isAdmin?'<span style="color:var(--orange);font-weight:800">✓</span>':'')+'</td>'+
+          '<td style="padding:8px 10px;font-size:11px;color:var(--muted)">'+last+'</td>'+
+          '<td style="padding:8px 10px;text-align:right;white-space:nowrap">'+
+            '<button class="btn btn-x" style="padding:4px 9px;font-size:10px;margin-right:4px" onclick="openResetPw('+u.id+',\''+esc(u.username).replace(/'/g,"\\'")+'\')">Reset PW</button>'+
+            (currentUser&&u.id===currentUser.id?'':
+              '<button class="btn btn-x" style="padding:4px 9px;font-size:10px;margin-right:4px" onclick="admToggleAdmin('+u.id+','+(u.isAdmin?'false':'true')+')">'+(u.isAdmin?'Revoke Admin':'Make Admin')+'</button>'+
+              '<button class="btn btn-d" style="padding:4px 9px;font-size:10px" onclick="admDeleteUser('+u.id+',\''+esc(u.username).replace(/'/g,"\\'")+'\')">Delete</button>'
+            )+
+          '</td>'+
+        '</tr>';
+      });
+      html+='</tbody></table>';
+      wrap.innerHTML=html;
+    }
+  }catch(e){
+    wrap.innerHTML='<div style="padding:20px;text-align:center;color:var(--red);font-size:12px">Failed to load users: '+esc(e.message||'unknown error')+'</div>';
+  }
+  // Also refresh legacy mode status
+  try{
+    const lm=await apiGet('/api/admin/legacy-mode');
+    const el=document.getElementById('admLegacyStatus');
+    if(el)el.innerHTML=lm&&lm.allowLegacyPassword?'<span style="color:var(--amber);font-weight:800">ENABLED</span>':'<span style="color:var(--green);font-weight:800">DISABLED</span>';
   }catch(e){}
+}
+
+function openAddUser(){
+  document.getElementById('addUserModal').classList.add('open');
+  document.getElementById('auUsername').value='';
+  document.getElementById('auDisplay').value='';
+  document.getElementById('auPassword').value='';
+  document.getElementById('auAdmin').checked=false;
+  document.getElementById('auMsg').style.display='none';
+  setTimeout(()=>document.getElementById('auUsername').focus(),100);
+}
+function closeAddUser(){document.getElementById('addUserModal').classList.remove('open')}
+async function submitAddUser(){
+  const u=document.getElementById('auUsername').value.trim();
+  const d=document.getElementById('auDisplay').value.trim();
+  const p=document.getElementById('auPassword').value;
+  const a=document.getElementById('auAdmin').checked;
+  const msg=document.getElementById('auMsg');
+  msg.style.display='none';
+  if(!u){msg.textContent='Username is required.';msg.style.display='block';return}
+  if(p.length<6){msg.textContent='Initial password must be at least 6 characters.';msg.style.display='block';return}
+  try{
+    const r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,displayName:d,password:p,isAdmin:a})});
+    const j=await r.json();
+    if(!r.ok){msg.textContent=j.error||'Failed to create user';msg.style.display='block';return}
+    closeAddUser();
+    alert('✓ User created.\n\nUsername: '+u+'\nInitial password: '+p+'\n\nGive these to the user. They will be forced to change the password on first login.');
+    loadAdmUsers();
+  }catch(e){msg.textContent='Error: '+e.message;msg.style.display='block'}
+}
+
+let rpwUserId=null;
+function openResetPw(id,username){
+  rpwUserId=id;
+  document.getElementById('rpwModal').classList.add('open');
+  document.getElementById('rpwUser').textContent=username;
+  document.getElementById('rpwPassword').value='';
+  document.getElementById('rpwMsg').style.display='none';
+  setTimeout(()=>document.getElementById('rpwPassword').focus(),100);
+}
+function closeResetPw(){document.getElementById('rpwModal').classList.remove('open');rpwUserId=null}
+async function submitResetPw(){
+  if(!rpwUserId)return;
+  const pw=document.getElementById('rpwPassword').value;
+  const msg=document.getElementById('rpwMsg');
+  msg.style.display='none';
+  if(pw.length<6){msg.textContent='Password must be at least 6 characters.';msg.style.display='block';return}
+  try{
+    const r=await fetch('/api/admin/users/'+rpwUserId+'/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newPassword:pw})});
+    const j=await r.json();
+    if(!r.ok){msg.textContent=j.error||'Failed to reset';msg.style.display='block';return}
+    const username=document.getElementById('rpwUser').textContent;
+    closeResetPw();
+    alert('✓ Password reset.\n\nUser: '+username+'\nNew password: '+pw+'\n\nGive this to the user. They will be forced to change it on next login.');
+    loadAdmUsers();
+  }catch(e){msg.textContent='Error: '+e.message;msg.style.display='block'}
+}
+
+async function admToggleAdmin(id,makeAdmin){
+  if(!confirm((makeAdmin?'Make this user an admin?':'Revoke admin rights from this user?')))return;
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({isAdmin:makeAdmin})});
+    const j=await r.json();
+    if(!r.ok){alert('Failed: '+(j.error||'unknown'));return}
+    loadAdmUsers();
+  }catch(e){alert('Error: '+e.message)}
+}
+
+async function admDeleteUser(id,username){
+  if(!confirm('Delete user "'+username+'"? This cannot be undone.'))return;
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'DELETE'});
+    const j=await r.json();
+    if(!r.ok){alert('Failed: '+(j.error||'unknown'));return}
+    loadAdmUsers();
+  }catch(e){alert('Error: '+e.message)}
+}
+
+async function admToggleLegacy(enabled){
+  const action=enabled?'ENABLE':'DISABLE';
+  const warning=enabled
+    ?'Enable the legacy NL1! / NLAdmin! shared passwords?\n\n(Use during transition while you migrate users.)'
+    :'DISABLE the legacy shared passwords?\n\nOnly users with their own account will be able to log in. Make sure everyone has been added first or you will lock people out.';
+  if(!confirm(warning))return;
+  try{
+    const r=await fetch('/api/admin/legacy-mode',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})});
+    const j=await r.json();
+    if(!r.ok){alert('Failed: '+(j.error||'unknown'));return}
+    alert('✓ Legacy shared password '+action+'D');
+    loadAdmUsers();
+  }catch(e){alert('Error: '+e.message)}
 }
 
 socket.on('user-count',(msg)=>{
@@ -3389,7 +3705,7 @@ socket.on('shift-lock',(msg)=>{
 socket.on('force-refresh',()=>{location.reload()});
 
 function admTab(idx){document.querySelectorAll('.adm-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.querySelectorAll('.adm-page').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  if(idx===1)loadAdmShifts();if(idx===2)loadAdmFleet();if(idx===4)loadAdmStats();if(idx===5)loadAdmLog();}
+  if(idx===1)loadAdmShifts();if(idx===2)loadAdmFleet();if(idx===4)loadAdmStats();if(idx===5)loadAdmLog();if(idx===6)loadAdmUsers();}
 
 async function openAdmin(){
   if(!isAdminUser)return;
